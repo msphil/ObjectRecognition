@@ -2,9 +2,12 @@ package image.csu.fullerton.edu;
 
 import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -142,6 +145,17 @@ public class DesignUI extends JFrame {
 
 	private void downscaleImage(int newWidth, int newHeight) {
 		System.out.printf("downscaleImage\n");
+		if (currentImage != null) {
+			BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+			Graphics2D graphics2D = scaledImage.createGraphics();
+			float scale_x = (float) newWidth / (float) currentImage.getWidth();
+			float scale_y = (float) newHeight / (float) currentImage.getHeight();
+			AffineTransform xform = AffineTransform.getScaleInstance(scale_x, scale_y);
+			graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			graphics2D.drawImage(currentImage, xform, null);
+			graphics2D.dispose();
+			setImage(scaledImage);
+		}
 	}
 
 	private void edgeDetectImage() {
@@ -243,11 +257,13 @@ public class DesignUI extends JFrame {
 
 	private void calculateMoments() {
 		System.out.printf("calculateMoments\n");
-		ImageMoments moments = new ImageMoments(currentImage);
-		for (int i=1; i <= 7 ; i++) {
-			System.out.printf("  Hu[%d]: %2.2f\n", i, moments.getMoment(i));
+		if (currentImage != null) {
+			ImageMoments moments = new ImageMoments(currentImage);
+			for (int i=1; i <= 7 ; i++) {
+				System.out.printf("  Hu[%d]: %2.2f\n", i, moments.getMoment(i));
+			}
+			System.out.printf("  Flusser/Suk: %2.2f\n", moments.getMoment(8));
 		}
-		System.out.printf("  Flusser/Suk: %2.2f\n", moments.getMoment(8));
 	}
 
 	private class ImageFileFilter extends javax.swing.filechooser.FileFilter {
