@@ -1,13 +1,14 @@
 package image.csu.fullerton.edu;
 
-import java.awt.Color;
+import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.RenderingHints;
+import java.awt.Image;
+import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +22,18 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import javax.media.Buffer;
+import javax.media.CaptureDeviceInfo;
+import javax.media.CaptureDeviceManager;
+import javax.media.Manager;
+import javax.media.MediaLocator;
+import javax.media.Player;
+import javax.media.control.FrameGrabbingControl;
+import javax.media.format.VideoFormat;
+import javax.media.util.BufferToImage;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 
 public class DesignUI extends JFrame {
 
@@ -41,8 +54,12 @@ public class DesignUI extends JFrame {
 	private JPanel capturePanel;
 	private JPanel loadPanel;
 	private JPanel quitPanel;
+	private JPanel bottomPanel;
 	private JPanel controlPanel;
-
+	private ImagePanel cameraPanel;	// custom panel for cameras
+	
+	private CaptureCamera camera;	// custom camera object
+	
 	private BufferedImage currentImage;
 
 	private String savedDirectoryPath;
@@ -58,11 +75,12 @@ public class DesignUI extends JFrame {
 		// design the layout: two
 		setLayout(new GridLayout(2, 1, 5, 5));
 
-		controlPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+		controlPanel = new JPanel(new GridLayout(3, 1, 10, 10));
 		imagePanel = new JPanel(new GridLayout(1, 2));
 		loadPanel = new JPanel(new FlowLayout());
 		capturePanel = new JPanel(new FlowLayout());
 		quitPanel = new JPanel(new FlowLayout());
+		bottomPanel = new JPanel(new GridLayout(1, 2));
 
 		imageLabel = new JLabel();
 		imagePanel.add(imageLabel);
@@ -90,6 +108,12 @@ public class DesignUI extends JFrame {
 		imagePanel.add(processPanel);
 
 		add(imagePanel);
+		
+		// video camera capture
+		cameraPanel = new ImagePanel();
+		camera = new CaptureCamera();
+		camera.addToPanel(cameraPanel);
+		bottomPanel.add(cameraPanel);		
 
 		// load button
 		loadButton = new JButton("Load");
@@ -108,7 +132,9 @@ public class DesignUI extends JFrame {
 		quitPanel.add(quitButton);
 		quitButton.addActionListener(buttonHandler);
 		controlPanel.add(quitPanel);
-		add(controlPanel);
+		
+		bottomPanel.add(controlPanel);
+		add(bottomPanel);
 
 	}
 
@@ -119,6 +145,25 @@ public class DesignUI extends JFrame {
 		currentImage = newImage;
 	}
 
+    private class ImagePanel extends Panel {
+
+        public Image myimg = null;
+
+        public ImagePanel() {
+            setLayout(null);
+            setSize(320, 240);
+        }
+
+        public void setImage(Image img) {
+            this.myimg = img;
+            repaint();
+        }
+
+        public void paint(Graphics g) {
+            super.paint(g);
+            g.drawImage(myimg, 0, 0, this);
+        }
+    }
 
 	private class ImageFileFilter extends javax.swing.filechooser.FileFilter {
 		protected String description;
@@ -132,7 +177,7 @@ public class DesignUI extends JFrame {
 		/** Return true if the given file is accepted by this filter. */
 		public boolean accept(File f) {
 			// Little trick: if you don't do this, only directory names
-			// ending in one of the extentions appear in the window.
+			// ending in one of the extensions appear in the window.
 			if (f.isDirectory()) {
 				return true;
 
@@ -198,18 +243,19 @@ public class DesignUI extends JFrame {
 				}
 			} else if (event.getSource() == captureButton) {
 				System.out.print("capture\n");
+				setImage(camera.captureImage());
 			} else if (event.getSource() == desaturateButton) {
-				setImage(Image.desaturateImage(currentImage));
+				setImage(image.csu.fullerton.edu.Image.desaturateImage(currentImage));
 			} else if (event.getSource() == downscaleButton) {
-				setImage(Image.downscaleImage(currentImage, 64, 64));
+				setImage(image.csu.fullerton.edu.Image.downscaleImage(currentImage, 64, 64));
 			} else if (event.getSource() == edgedetectButton) {
-				setImage(Image.edgeDetectImage(currentImage));
+				setImage(image.csu.fullerton.edu.Image.edgeDetectImage(currentImage));
 			} else if (event.getSource() == cannyEdgeDetectButton) {
-				setImage(Image.cannyEdgeDetectImage(currentImage));
+				setImage(image.csu.fullerton.edu.Image.cannyEdgeDetectImage(currentImage));
 			} else if (event.getSource() == thresholdButton) {
-				setImage(Image.thresholdImage(currentImage));
+				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage));
 			} else if (event.getSource() == momentsButton) {
-				Image.calculateMoments(currentImage);
+				image.csu.fullerton.edu.Image.calculateMoments(currentImage);
 			} else {
 				// ignore
 			}
