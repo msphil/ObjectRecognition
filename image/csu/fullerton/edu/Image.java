@@ -5,6 +5,10 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class Image {
 	
@@ -157,6 +161,15 @@ public class Image {
 				System.out.printf("  Hu[%d]: %2.2f\n", i, moments.getMoment(i));
 			}
 			System.out.printf("  Flusser/Suk: %2.2f\n", moments.getMoment(8));
+		}
+	}
+	
+	static void saveImage(BufferedImage currentImage, String filename, String filetype) {
+		System.out.printf("saveImage(%s)[%s]\n",filename,filetype);
+		try {
+		    File file = new File(filename);
+		    ImageIO.write(currentImage, filetype, file);
+		} catch (IOException e) {
 		}
 	}
 

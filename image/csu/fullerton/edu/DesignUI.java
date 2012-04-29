@@ -1,7 +1,5 @@
 package image.csu.fullerton.edu;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.GridLayout;
@@ -23,22 +21,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import javax.media.Buffer;
-import javax.media.CaptureDeviceInfo;
-import javax.media.CaptureDeviceManager;
-import javax.media.Manager;
-import javax.media.MediaLocator;
-import javax.media.Player;
-import javax.media.control.FrameGrabbingControl;
-import javax.media.format.VideoFormat;
-import javax.media.util.BufferToImage;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-
 public class DesignUI extends JFrame {
 
 	private JButton captureButton;
 	private JButton loadButton;
+	private JButton saveButton;
 	private JButton quitButton;
 
 	private JButton desaturateButton;
@@ -52,6 +39,7 @@ public class DesignUI extends JFrame {
 	private JLabel imageLabel;
 	private JPanel processPanel;
 	private JPanel capturePanel;
+	private JPanel savePanel;
 	private JPanel loadPanel;
 	private JPanel quitPanel;
 	private JPanel bottomPanel;
@@ -75,8 +63,9 @@ public class DesignUI extends JFrame {
 		// design the layout: two
 		setLayout(new GridLayout(2, 1, 5, 5));
 
-		controlPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+		controlPanel = new JPanel(new GridLayout(4, 1, 10, 10));
 		imagePanel = new JPanel(new GridLayout(1, 2));
+		savePanel = new JPanel(new FlowLayout());
 		loadPanel = new JPanel(new FlowLayout());
 		capturePanel = new JPanel(new FlowLayout());
 		quitPanel = new JPanel(new FlowLayout());
@@ -114,6 +103,12 @@ public class DesignUI extends JFrame {
 		camera = new CaptureCamera();
 		camera.addToPanel(cameraPanel);
 		bottomPanel.add(cameraPanel);		
+
+		// save button
+		saveButton = new JButton("Save");
+		savePanel.add(saveButton);
+		saveButton.addActionListener(buttonHandler);
+		controlPanel.add(savePanel);
 
 		// load button
 		loadButton = new JButton("Load");
@@ -244,6 +239,8 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == captureButton) {
 				System.out.print("capture\n");
 				setImage(camera.captureImage());
+			} else if (event.getSource() == saveButton) {
+				image.csu.fullerton.edu.Image.saveImage(currentImage, "c:/ordata/test/test.jpg", "JPG");
 			} else if (event.getSource() == desaturateButton) {
 				setImage(image.csu.fullerton.edu.Image.desaturateImage(currentImage));
 			} else if (event.getSource() == downscaleButton) {
