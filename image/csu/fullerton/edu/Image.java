@@ -53,6 +53,75 @@ public class Image {
 		return scaledImage;
 	}
 
+	static BufferedImage sobelEdgeDetectImage(BufferedImage currentImage) {
+		BufferedImage newImage = null;
+		System.out.printf("sobelEdgeDetectImage\n");
+		
+		if (currentImage != null) {
+			float template[] = {-1,0,1,-2,0,2,-1,0,1};
+			int width, height;
+			width = currentImage.getWidth();
+			height = currentImage.getHeight();
+			newImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			
+			float[] GY = new float[width*height];
+			float[] GX = new float[width*height];
+			int[] total = new int[width*height];
+			int sum=0;
+			int max=0;
+			int templateSize=3;
+			int[] input = new int[width*height];
+			int[] output = new int[width*height];
+			double[] direction = new double[width*height];
+			
+			currentImage.getRGB(0, 0, width, height, input, 0, width);
+			
+			for(int x=(templateSize-1)/2; x<width-(templateSize+1)/2;x++) {
+				for(int y=(templateSize-1)/2; y<height-(templateSize+1)/2;y++) {
+					sum=0;
+
+					for(int x1=0;x1<templateSize;x1++) {
+						for(int y1=0;y1<templateSize;y1++) {
+							int x2 = (x-(templateSize-1)/2+x1);
+							int y2 = (y-(templateSize-1)/2+y1);
+							float value = (input[y2*width+x2] & 0xff) * (template[y1*templateSize+x1]);
+							sum += value;
+						}
+					}
+					GY[y*width+x] = sum;
+					for(int x1=0;x1<templateSize;x1++) {
+						for(int y1=0;y1<templateSize;y1++) {
+							int x2 = (x-(templateSize-1)/2+x1);
+							int y2 = (y-(templateSize-1)/2+y1);
+							float value = (input[y2*width+x2] & 0xff) * (template[x1*templateSize+y1]);
+							sum += value;
+						}
+					}
+					GX[y*width+x] = sum;
+
+				}
+			}
+			for(int x=0; x<width;x++) {
+				for(int y=0; y<height;y++) {
+					total[y*width+x]=(int)Math.sqrt(GX[y*width+x]*GX[y*width+x]+GY[y*width+x]*GY[y*width+x]);
+					direction[y*width+x] = Math.atan2(GX[y*width+x],GY[y*width+x]);
+					if(max<total[y*width+x])
+						max=total[y*width+x];
+				}
+			}
+			float ratio=(float)max/255;
+			for(int x=0; x<width;x++) {
+				for(int y=0; y<height;y++) {
+					sum=(int)(total[y*width+x]/ratio);
+					output[y*width+x] = 0xff000000 | ((int)sum << 16 | (int)sum << 8 | (int)sum);
+				}
+			}
+			newImage.setRGB(0, 0, width, height, output, 0, width);
+		}
+		
+		return newImage;
+	}
+	
 	static BufferedImage edgeDetectImage(BufferedImage currentImage) {
 		/*
 		 * http://processing.org/learning/topics/edgedetection.html
@@ -79,7 +148,9 @@ public class Image {
 							sum += filter[dy + 1][dx + 1] * val;
 						}
 					}
-					int newPixel = ((int) sum) & 0x000000FF;
+					int newPixel = (int)sum;
+					if (newPixel > 255) newPixel = 255;
+					if (newPixel < 0) newPixel = 0;
 					Color finalPixel = new Color(newPixel,newPixel,newPixel); 
 					newImage.setRGB(x, y, finalPixel.getRGB());
 				}
@@ -125,7 +196,7 @@ public class Image {
 					 * arbitrary value, could possibly make this settable or
 					 * dynamic
 					 */
-					if (avgVal >= 192) {
+					if (avgVal >= 128) {
 						finalPixel = 0x00FFFFFF | a << 24;
 					} else {
 						finalPixel = 0x00000000 | a << 24;

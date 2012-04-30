@@ -1,6 +1,7 @@
 .classpath
 .project
 *.class
+hs_err_*.log
 
 # Package Files #
 *.jar

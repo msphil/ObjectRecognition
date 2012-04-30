@@ -34,6 +34,7 @@ public class DesignUI extends JFrame {
 	private JButton desaturateButton;
 	private JButton downscaleButton;
 	private JButton edgedetectButton;
+	private JButton sobelButton;
 	private JButton cannyEdgeDetectButton;
 	private JButton thresholdButton;
 	private JButton momentsButton;
@@ -90,6 +91,9 @@ public class DesignUI extends JFrame {
 		edgedetectButton = new JButton("Edge Detect");
 		edgedetectButton.addActionListener(buttonHandler);
 		processPanel.add(edgedetectButton);
+		sobelButton = new JButton("Sobel Edge Detect");
+		sobelButton.addActionListener(buttonHandler);
+		processPanel.add(sobelButton);
 		cannyEdgeDetectButton = new JButton("Canny Edge Detect");
 		cannyEdgeDetectButton.addActionListener(buttonHandler);
 		processPanel.add(cannyEdgeDetectButton);
@@ -105,8 +109,8 @@ public class DesignUI extends JFrame {
 		
 		// video camera capture
 		cameraPanel = new ImagePanel();
-		camera = new CaptureCamera();
-		camera.addToPanel(cameraPanel);
+		//camera = new CaptureCamera();
+		//camera.addToPanel(cameraPanel);
 		bottomPanel.add(cameraPanel);		
 
 		// save button
@@ -266,6 +270,8 @@ public class DesignUI extends JFrame {
 				setImage(image.csu.fullerton.edu.Image.downscaleImage(currentImage, 64, 64));
 			} else if (event.getSource() == edgedetectButton) {
 				setImage(image.csu.fullerton.edu.Image.edgeDetectImage(currentImage));
+			} else if (event.getSource() == sobelButton) {
+				setImage(image.csu.fullerton.edu.Image.sobelEdgeDetectImage(currentImage));
 			} else if (event.getSource() == cannyEdgeDetectButton) {
 				setImage(image.csu.fullerton.edu.Image.cannyEdgeDetectImage(currentImage));
 			} else if (event.getSource() == thresholdButton) {
