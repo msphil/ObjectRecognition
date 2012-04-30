@@ -16,9 +16,15 @@ public class ObjectRecognizer
 	{
 		final int appWidth = 750;
 		final int appHeight = 450;
-		DesignUI ui = new DesignUI();
-		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		ui.setSize(appWidth,appHeight);
-		ui.setVisible(true);
+		DesignUI uiDesign = new DesignUI();
+		uiDesign.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		uiDesign.setSize(appWidth,appHeight);
+		uiDesign.setVisible(true);
+		TestUI uiTest = new TestUI();
+		uiTest.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		uiTest.setSize(appWidth,appHeight);
+		uiTest.setVisible(false);
+		uiDesign.setSwitcher(uiTest);
+		uiTest.setSwitcher(uiDesign);
 	}
 }

@@ -70,26 +70,18 @@ public class Image {
 						for (int dx = -1; dx <= 1; dx++) {
 							int avgVal;
 							int r, g, b;
-							if (false) {
-								Color pixel = new Color(currentImage.getRGB(x, y));
-								b = pixel.getBlue();
-								g = pixel.getGreen();
-								r = pixel.getRed();
-							} else {
-								int pixel = currentImage.getRGB(x, y);
-								b = (pixel & 0x00FF0000) >> 16;
-								g = (pixel & 0x0000FF00) >> 8;
-								r = pixel & 0x000000FF;
-							}
+							Color pixel = new Color(currentImage.getRGB(x, y));
+							b = pixel.getBlue();
+							g = pixel.getGreen();
+							r = pixel.getRed();
 							avgVal = (b + g + r) / 3;
 							float val = (float) avgVal;
 							sum += filter[dy + 1][dx + 1] * val;
 						}
 					}
 					int newPixel = ((int) sum) & 0x000000FF;
-					int finalPixel = 0xFF000000 | newPixel | newPixel << 8
-							| newPixel << 16;
-					newImage.setRGB(x, y, finalPixel);
+					Color finalPixel = new Color(newPixel,newPixel,newPixel); 
+					newImage.setRGB(x, y, finalPixel.getRGB());
 				}
 			}
 		}
@@ -123,19 +115,11 @@ public class Image {
 					int avgVal;
 					int a, r, g, b;
 					int finalPixel;
-					if (false) {
-						Color pixel = new Color(currentImage.getRGB(x, y));
-						b = pixel.getBlue();
-						g = pixel.getGreen();
-						r = pixel.getRed();
-						a = pixel.getAlpha();
-					} else {
-						int pixel = currentImage.getRGB(x, y);
-						b = (pixel & 0x00FF0000) >> 16;
-						g = (pixel & 0x0000FF00) >> 8;
-						r = pixel & 0x000000FF;
-						a = (pixel & 0xFF000000) >> 24;
-					}
+					Color pixel = new Color(currentImage.getRGB(x, y));
+					b = pixel.getBlue();
+					g = pixel.getGreen();
+					r = pixel.getRed();
+					a = pixel.getAlpha();
 					avgVal = (b + g + r) / 3;
 					/*
 					 * arbitrary value, could possibly make this settable or
@@ -172,5 +156,4 @@ public class Image {
 		} catch (IOException e) {
 		}
 	}
-
 }

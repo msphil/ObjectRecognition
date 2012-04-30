@@ -23,9 +23,12 @@ import javax.swing.JPanel;
 
 public class DesignUI extends JFrame {
 
+	private JFrame switchFrame;
+	
 	private JButton captureButton;
 	private JButton loadButton;
 	private JButton saveButton;
+	private JButton switchButton;
 	private JButton quitButton;
 
 	private JButton desaturateButton;
@@ -41,6 +44,7 @@ public class DesignUI extends JFrame {
 	private JPanel capturePanel;
 	private JPanel savePanel;
 	private JPanel loadPanel;
+	private JPanel switchPanel;
 	private JPanel quitPanel;
 	private JPanel bottomPanel;
 	private JPanel controlPanel;
@@ -63,11 +67,12 @@ public class DesignUI extends JFrame {
 		// design the layout: two
 		setLayout(new GridLayout(2, 1, 5, 5));
 
-		controlPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+		controlPanel = new JPanel(new GridLayout(5, 1, 10, 10));
 		imagePanel = new JPanel(new GridLayout(1, 2));
 		savePanel = new JPanel(new FlowLayout());
 		loadPanel = new JPanel(new FlowLayout());
 		capturePanel = new JPanel(new FlowLayout());
+		switchPanel = new JPanel(new FlowLayout());
 		quitPanel = new JPanel(new FlowLayout());
 		bottomPanel = new JPanel(new GridLayout(1, 2));
 
@@ -122,6 +127,12 @@ public class DesignUI extends JFrame {
 		captureButton.addActionListener(buttonHandler);
 		controlPanel.add(capturePanel);
 
+		// switch UI button
+		switchButton = new JButton("Switch to Test");
+		switchPanel.add(switchButton);
+		switchButton.addActionListener(buttonHandler);
+		controlPanel.add(switchPanel);
+		
 		// quit button
 		quitButton = new JButton("Quit");
 		quitPanel.add(quitButton);
@@ -138,6 +149,10 @@ public class DesignUI extends JFrame {
 		imageLabel.setIcon(newImageIcon);
 		imageLabel.setVisible(true);
 		currentImage = newImage;
+	}
+	
+	void setSwitcher(JFrame newFrame) {
+		switchFrame = newFrame;
 	}
 
     private class ImagePanel extends Panel {
@@ -207,6 +222,9 @@ public class DesignUI extends JFrame {
 				System.out.print("quit\n");
 				DesignUI.this.dispose(); // clean up UI
 				System.exit(0);
+			} else if (event.getSource() == switchButton) {
+				DesignUI.this.setVisible(false);
+				switchFrame.setVisible(true);
 			} else if (event.getSource() == loadButton) {
 				System.out.print("load\n");
 				JFileChooser chooser = new JFileChooser();
