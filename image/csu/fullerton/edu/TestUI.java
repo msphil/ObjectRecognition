@@ -118,6 +118,7 @@ public class TestUI extends JFrame {
 			} else if (event.getSource() == switchButton) {
 				TestUI.this.setVisible(false);
 				switchFrame.setVisible(true);
+				switchFrame.setBounds(TestUI.this.getBounds());
 			} else if (event.getSource() == saveButton) {
 				image.csu.fullerton.edu.Image.saveImage(currentImage, "c:/ordata/test/test.jpg", "JPG");
 			} else if (event.getSource() == desaturateButton) {

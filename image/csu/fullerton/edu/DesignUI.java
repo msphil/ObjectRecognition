@@ -225,6 +225,7 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == switchButton) {
 				DesignUI.this.setVisible(false);
 				switchFrame.setVisible(true);
+				switchFrame.setBounds(DesignUI.this.getBounds());
 			} else if (event.getSource() == loadButton) {
 				System.out.print("load\n");
 				JFileChooser chooser = new JFileChooser();
