@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -34,6 +35,16 @@ public class TestUI extends JFrame {
 	private JRadioButton designRadioButton;
 	private JRadioButton testRadioButton;
 	private ButtonGroup groupDesignTest;
+	
+	private JRadioButton sobelRadioButton;
+	private JRadioButton sobelThresholdRadioButton;
+	private JRadioButton cannyRadioButton;
+	private ButtonGroup groupFeatureSet;
+	
+	private JRadioButton hu6RadioButton;
+	private JRadioButton hu7RadioButton;
+	private JRadioButton hu8RadioButton;
+	private ButtonGroup groupFeatureVector;
 	
 	private JButton calcClassifierButton;
 	private JButton testDataButton;
@@ -71,6 +82,7 @@ public class TestUI extends JFrame {
 		JPanel testTextPanel;
 		JPanel classTextPanel;
 		JPanel pickDesignTestPanel;
+		JPanel classAndFeaturePanel;
 		
 		JPanel leftPanel;
 		JPanel rightPanel;
@@ -81,7 +93,6 @@ public class TestUI extends JFrame {
 		// design the layout: two
 		setLayout(new GridLayout(1, 2, 5, 5));
 
-		controlPanel = new JPanel(new GridLayout(5, 1, 10, 10));
 		savePanel = new JPanel(new FlowLayout());
 		evalPanel = new JPanel(new FlowLayout());
 		loadPanel = new JPanel(new FlowLayout());
@@ -103,7 +114,8 @@ public class TestUI extends JFrame {
 		add(leftPanel);
 
 		// image processing buttons
-		dataPanel = new JPanel(new GridLayout(4,1));
+		dataPanel = new JPanel();
+		dataPanel.setLayout(new BoxLayout(dataPanel, BoxLayout.PAGE_AXIS));
 		designTextPanel = new JPanel(new FlowLayout());
 		designTextField = new JTextField(10);
 		designTextPanel.add(new JLabel("Design: "));
@@ -125,6 +137,10 @@ public class TestUI extends JFrame {
 		
 		// Confusion Matrix Output
 		rightPanel.add(new JPanel().add(new JLabel("Confusion Matrix")));
+		
+		// control panel (capture/eval/save/switch/quit)
+		controlPanel = new JPanel();
+		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.PAGE_AXIS));
 		
 		// switch UI button
 		switchButton = new JButton("Switch to Design");
@@ -177,8 +193,46 @@ public class TestUI extends JFrame {
 		
 		rightPanel.add(controlPanel);
 		
-		// Confusion Matrix Output
-		rightPanel.add(new JPanel().add(new JLabel("feature selection / moment size")));
+		// pre-processing selector
+		classAndFeaturePanel = new JPanel();
+		classAndFeaturePanel.setLayout(new BoxLayout(classAndFeaturePanel, BoxLayout.PAGE_AXIS));
+		classAndFeaturePanel.add(new JPanel().add(new JLabel("feature selection:")));
+		
+		sobelRadioButton = new JRadioButton("Sobel Edge Detection");
+		sobelRadioButton.addActionListener(buttonHandler);
+		sobelThresholdRadioButton = new JRadioButton("Sobel + Threshold");
+		sobelThresholdRadioButton.addActionListener(buttonHandler);
+		cannyRadioButton = new JRadioButton("Canny Edge Detection");
+		cannyRadioButton.addActionListener(buttonHandler);
+		groupFeatureSet = new ButtonGroup();
+		groupFeatureSet.add(sobelRadioButton);
+		groupFeatureSet.add(sobelThresholdRadioButton);
+		groupFeatureSet.add(cannyRadioButton);
+		sobelRadioButton.setSelected(true);
+		classAndFeaturePanel.add(sobelRadioButton);
+		classAndFeaturePanel.add(sobelThresholdRadioButton);
+		classAndFeaturePanel.add(cannyRadioButton);
+		
+		classAndFeaturePanel.add(new JPanel().add(new JLabel("moment size selection:")));
+		
+		hu7RadioButton = new JRadioButton("Classic Hu (7)");
+		hu7RadioButton.addActionListener(buttonHandler);
+		hu8RadioButton = new JRadioButton("Hu + Flusser (8)");
+		hu8RadioButton.addActionListener(buttonHandler);
+		hu6RadioButton = new JRadioButton("minimal Hu + Flusser (6)");
+		hu6RadioButton.addActionListener(buttonHandler);
+		groupFeatureVector = new ButtonGroup();
+		groupFeatureVector.add(hu7RadioButton);
+		groupFeatureVector.add(hu8RadioButton);
+		groupFeatureVector.add(hu6RadioButton);
+		hu8RadioButton.setSelected(true);
+		classAndFeaturePanel.add(hu7RadioButton);
+		classAndFeaturePanel.add(hu8RadioButton);
+		classAndFeaturePanel.add(hu6RadioButton);
+		
+		classAndFeaturePanel.add(new JPanel().add(new JLabel("classifier selection:")));
+		
+		rightPanel.add(classAndFeaturePanel);
 		
 		add(rightPanel);
 
@@ -194,6 +248,32 @@ public class TestUI extends JFrame {
 	
 	void setSwitcher(JFrame newFrame) {
 		switchFrame = newFrame;
+	}
+	
+	double[] getFeatureVector(ImageMoments im) {
+		double[] all = im.getAllMoments();
+		double[] ret = null;
+		if (hu6RadioButton.isSelected()) {
+			ret = new double[6];
+			ret[0] = all[0];
+			ret[1] = all[3];
+			ret[2] = all[4];
+			ret[3] = all[5];
+			ret[4] = all[6];
+			ret[5] = all[7];
+		} else if (hu7RadioButton.isSelected()) {
+			ret = new double[7];
+			ret[0] = all[0];
+			ret[1] = all[1];
+			ret[2] = all[2];
+			ret[3] = all[3];
+			ret[4] = all[4];
+			ret[5] = all[5];
+			ret[6] = all[6];
+		} else {
+			ret = all;
+		}
+		return ret;
 	}
 	
 	private int getNextFileName(String strFileName) {
@@ -215,8 +295,14 @@ public class TestUI extends JFrame {
 	}
 
 	private int preProcessingType() {
-		// temporarily hard-code
-		return 1;
+		if (sobelRadioButton.isSelected()) {
+			return 1;
+		} else if (sobelThresholdRadioButton.isSelected()) {
+			return 2;
+		} else if (cannyRadioButton.isSelected()) {
+			return 3;
+		} else 
+			return 0;
 	}
 	
 	private BufferedImage processImage(BufferedImage image) {
@@ -233,8 +319,17 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			break;
 		case 2:
+			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.thresholdImage(processedImage);
+			setImage(processedImage);
+			break;
+		case 3:
 			processedImage = Image.cannyEdgeDetectImage(processedImage);
 			setImage(processedImage);
+			break;
 		}
 		
 		return processedImage;
@@ -273,7 +368,7 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			knn.addDesign(im.getAllMoments(), c);
+			knn.addDesign(getFeatureVector(im), c);
 		}
 	}
 
@@ -282,7 +377,7 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			ret_c = knn.testVector(im.getAllMoments(), getKValue());
+			ret_c = knn.testVector(getFeatureVector(im), getKValue());
 		}
 		return ret_c;
 	}
@@ -292,7 +387,7 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(image);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			ret_c = knn.testVector(im.getAllMoments(), getKValue());
+			ret_c = knn.testVector(getFeatureVector(im), getKValue());
 		}
 		return ret_c;
 	}
