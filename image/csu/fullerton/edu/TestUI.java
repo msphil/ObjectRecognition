@@ -28,7 +28,6 @@ public class TestUI extends JFrame {
 	private JButton switchButton;
 	private JButton quitButton;
 
-	private JButton momentsButton;
 	private JButton calcClassifierButton;
 	private JButton testDataButton;
 	
@@ -45,21 +44,19 @@ public class TestUI extends JFrame {
 
 	private String savedDirectoryPath;
 	
+	private KNearestNeighbor knn;
+	
 	// Constructor: create the interface
 	public TestUI() {
 		// Set title and layout
 		super("Object Recognition -- Design");
 
-		JPanel picturePanel;
-		JPanel imagePanel;
-		JPanel processPanel;
 		JPanel capturePanel;
 		JPanel savePanel;
 		JPanel evalPanel;
 		JPanel loadPanel;
 		JPanel switchPanel;
 		JPanel quitPanel;
-		JPanel bottomPanel;
 		JPanel controlPanel;
 		JPanel dataPanel;
 		JPanel designTextPanel;
@@ -74,16 +71,13 @@ public class TestUI extends JFrame {
 		// design the layout: two
 		setLayout(new GridLayout(1, 2, 5, 5));
 
-		picturePanel = new JPanel(new GridLayout(2, 1, 0, 0));
 		controlPanel = new JPanel(new GridLayout(5, 1, 10, 10));
-		imagePanel = new JPanel(new GridLayout(1, 2));
 		savePanel = new JPanel(new FlowLayout());
 		evalPanel = new JPanel(new FlowLayout());
 		loadPanel = new JPanel(new FlowLayout());
 		capturePanel = new JPanel(new FlowLayout());
 		switchPanel = new JPanel(new FlowLayout());
 		quitPanel = new JPanel(new FlowLayout());
-		bottomPanel = new JPanel(new GridLayout(1, 2));
 		leftPanel = new JPanel(new GridLayout(2, 1));
 		rightPanel = new JPanel(new GridLayout(2, 2));
 
@@ -111,8 +105,10 @@ public class TestUI extends JFrame {
 		testTextPanel.add(testTextField);
 		dataPanel.add(testTextPanel);
 		calcClassifierButton = new JButton("Calculate Classifier Parameters");
+		calcClassifierButton.addActionListener(buttonHandler);
 		dataPanel.add(calcClassifierButton);
 		testDataButton = new JButton("Test Data With Current Classifier");
+		testDataButton.addActionListener(buttonHandler);
 		dataPanel.add(testDataButton);
 
 		rightPanel.add(dataPanel);
@@ -169,9 +165,78 @@ public class TestUI extends JFrame {
 	void setSwitcher(JFrame newFrame) {
 		switchFrame = newFrame;
 	}
+	
+	private int getNextFileName(String strFileName) {
+		// we're going to start at 1, for no particular reason
+		int nextFile = 1;
+		for (; ; nextFile++) {
+			String strNewFileName = String.format("%s%d.jpg", strFileName, nextFile);
+			File f = new File(strNewFileName);
+			if (!f.exists())
+				break;
+		}
+		return nextFile;
+	}
 
-	// ButtonHandler: on Calculate, calculate pay. On Clear, clear
-	// fields.
+	private boolean classHasFiles(String strPath, String strClass) {
+		String strNewFileName = String.format("%s/c%s-1.jpg", strPath, strClass);
+		File f = new File(strNewFileName);
+		return f.exists();
+	}
+	
+	private BufferedImage processImage(String strFileName, int c) {
+		// hard code pre-processing/moment size temporarily
+		File f = new File(strFileName);
+		BufferedImage processedImage = null;
+		try {
+			BufferedImage newImage = ImageIO.read(f);
+			processedImage = newImage;
+			
+			processedImage = Image.downscaleImage(newImage, 128, 80);
+			processedImage = Image.desaturateImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			
+			double[] moments = new double[8];
+			ImageMoments im = new ImageMoments(processedImage);
+			for (int i=1; i <= 8; i++) {
+				moments[i-1] = im.getMoment(i);
+			}
+			knn.addDesign(moments, c);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return processedImage;
+	}
+
+	private void processImageAndAdd(String strFileName, int c) {
+		// hard code pre-processing/moment size temporarily
+		BufferedImage processedImage = processImage(strFileName, c);
+		if (processedImage != null) {
+			double[] moments = new double[8];
+			ImageMoments im = new ImageMoments(processedImage);
+			for (int i=1; i <= 8; i++) {
+				moments[i-1] = im.getMoment(i);
+			}
+			knn.addDesign(moments, c);
+		}
+	}
+
+	private int processImageAndTest(String strFileName, int c) {
+		int ret_c = 0;
+		// hard code pre-processing/moment size temporarily
+		BufferedImage processedImage = processImage(strFileName, c);
+		if (processedImage != null) {
+			double[] moments = new double[8];
+			ImageMoments im = new ImageMoments(processedImage);
+			for (int i=1; i <= 8; i++) {
+				moments[i-1] = im.getMoment(i);
+			}
+			ret_c = knn.testVector(moments, 5);
+		}
+		return ret_c;
+	}
+
+	// ButtonHandler: 
 	private class ButtonHandler implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
 			if (event.getSource() == quitButton) {
@@ -188,15 +253,58 @@ public class TestUI extends JFrame {
 			} else if (event.getSource() == saveButton) {
 				String strDesignSet = designTextField.getText();
 				String strTestSet = testTextField.getText();
-				// hard code design for now
-				String strFileName = String.format("c:/ordata/%s-%s/c%s-%d.jpg", "design", strDesignSet, "1", 0);
+				boolean isDesign = false;
+				// hard code for now
+				String strIntermediateFileName = String.format("c:/ordata/%s-%s/c%s-", isDesign ? "design" : "test", isDesign ? strDesignSet : strTestSet, "2");
+				int nextFile = getNextFileName(strIntermediateFileName);
+				String strFileName = String.format("%s%d.jpg", strIntermediateFileName, nextFile);
 				image.csu.fullerton.edu.Image.saveImage(currentImage, strFileName, "JPG");
-			} else if (event.getSource() == momentsButton) {
-				image.csu.fullerton.edu.Image.calculateMoments(currentImage);
 			} else if (event.getSource() == calcClassifierButton) {
 				System.out.printf("calculate classifier!\n");
+				knn = new KNearestNeighbor();
+				int c = 1;
+				while (classHasFiles(String.format("c:/ordata/design-%s",designTextField.getText()), String.format("%d",c))) {
+					int i = 1;
+					boolean done = false;
+					while (!done) {
+						String strFileName = String.format("c:/ordata/design-%s/c%d-%d.jpg",designTextField.getText(),c,i);
+						File f = new File(strFileName);
+						if (f.exists()) {
+							System.out.printf("Processing '%s'\n", strFileName);
+							processImage(strFileName, c);
+						} else {
+							done = true;
+						}
+						i++;
+					}
+					c++;
+				}
 			} else if (event.getSource() == testDataButton) {
 				System.out.printf("test data!\n");
+				if (knn != null) {
+					int c = 1;
+					while (classHasFiles(String.format("c:/ordata/test-%s",testTextField.getText()), String.format("%d",c))) {
+						int i = 1;
+						boolean done = false;
+						while (!done) {
+							String strFileName = String.format("c:/ordata/test-%s/c%d-%d.jpg",testTextField.getText(),c,i);
+							File f = new File(strFileName);
+							if (f.exists()) {
+								System.out.printf("Processing '%s'\n", strFileName);
+								int eval_c = processImageAndTest(strFileName, c);
+								if (eval_c == c) {
+									System.out.printf("'%s' was classified correctly!\n", strFileName);
+								} else {
+									System.out.printf("'%s' (expected %d) was mis-classified as %d\n", strFileName, c, eval_c);
+								}
+							} else {
+								done = true;
+							}
+							i++;
+						}
+						c++;
+					}
+				}
 			} else {
 				// ignore
 			}

@@ -198,8 +198,7 @@ public class DesignUI extends JFrame {
 		}
 	}
 
-	// ButtonHandler: on Calculate, calculate pay. On Clear, clear
-	// fields.
+	// ButtonHandler:
 	private class ButtonHandler implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
 			if (event.getSource() == quitButton) {
