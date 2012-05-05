@@ -54,6 +54,7 @@ public class Image {
 	}
 
 	static BufferedImage sobelEdgeDetectImage(BufferedImage currentImage) {
+		/* http://users.ecs.soton.ac.uk/msn/book/new_demo/sobel/ */
 		BufferedImage newImage = null;
 		System.out.printf("sobelEdgeDetectImage\n");
 		

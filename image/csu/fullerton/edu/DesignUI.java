@@ -159,26 +159,6 @@ public class DesignUI extends JFrame {
 		switchFrame = newFrame;
 	}
 
-    private class ImagePanel extends Panel {
-
-        public Image myimg = null;
-
-        public ImagePanel() {
-            setLayout(null);
-            setSize(320, 240);
-        }
-
-        public void setImage(Image img) {
-            this.myimg = img;
-            repaint();
-        }
-
-        public void paint(Graphics g) {
-            super.paint(g);
-            g.drawImage(myimg, 0, 0, this);
-        }
-    }
-
 	private class ImageFileFilter extends javax.swing.filechooser.FileFilter {
 		protected String description;
 

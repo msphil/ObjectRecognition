@@ -14,16 +14,16 @@ public class ObjectRecognizer
 {
 	public static void main (String[] args)
 	{
-		final int appWidth = 750;
-		final int appHeight = 450;
+		final int appWidth = 1000;
+		final int appHeight = 700;
 		DesignUI uiDesign = new DesignUI();
 		uiDesign.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		uiDesign.setSize(appWidth,appHeight);
-		uiDesign.setVisible(true);
+		uiDesign.setVisible(false);
 		TestUI uiTest = new TestUI();
 		uiTest.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		uiTest.setSize(appWidth,appHeight);
-		uiTest.setVisible(false);
+		uiTest.setVisible(true);
 		uiDesign.setSwitcher(uiTest);
 		uiTest.setSwitcher(uiDesign);
 	}

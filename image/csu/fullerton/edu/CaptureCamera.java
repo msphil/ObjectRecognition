@@ -22,6 +22,7 @@ public class CaptureCamera {
     private Player player;
 
 	CaptureCamera() {
+		player = null;
 		try {
 		    CaptureDeviceInfo DI;
 		    MediaLocator ML;
@@ -40,21 +41,26 @@ public class CaptureCamera {
         Component comp;
         if ((comp = player.getVisualComponent()) != null) {
             cameraPanel.add(comp, BorderLayout.NORTH);
+        } else {
+        	System.out.printf("Unable to obtain visual component for camera!\n");
         }
 	}
 
 	public BufferedImage captureImage() {
 	    Buffer BUF;
-	    BufferedImage img;
+	    BufferedImage img = null;
 	    BufferToImage BtoI;
 	    
         FrameGrabbingControl fgc = (FrameGrabbingControl) player.getControl("javax.media.control.FrameGrabbingControl");
-        BUF = fgc.grabFrame();
+        if (fgc != null) {
+        	BUF = fgc.grabFrame();
+            // Convert it to an image
+            BtoI = new BufferToImage((VideoFormat) BUF.getFormat());
+            img = (BufferedImage)BtoI.createImage(BUF);
+        } else {
+        	System.out.printf("Failed to obtain frame grabber!\n");
+        }
 
-        // Convert it to an image
-        BtoI = new BufferToImage((VideoFormat) BUF.getFormat());
-        img = (BufferedImage)BtoI.createImage(BUF);
-		
 		return img;
 	}
 
