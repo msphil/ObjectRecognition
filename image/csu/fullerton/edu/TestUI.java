@@ -4,17 +4,20 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 public class TestUI extends JFrame {
@@ -28,11 +31,16 @@ public class TestUI extends JFrame {
 	private JButton switchButton;
 	private JButton quitButton;
 
+	private JRadioButton designRadioButton;
+	private JRadioButton testRadioButton;
+	private ButtonGroup groupDesignTest;
+	
 	private JButton calcClassifierButton;
 	private JButton testDataButton;
 	
 	private JTextField designTextField;
 	private JTextField testTextField;
+	private JTextField classTextField;
 
 	private JLabel imageLabel;
 
@@ -61,6 +69,8 @@ public class TestUI extends JFrame {
 		JPanel dataPanel;
 		JPanel designTextPanel;
 		JPanel testTextPanel;
+		JPanel classTextPanel;
+		JPanel pickDesignTestPanel;
 		
 		JPanel leftPanel;
 		JPanel rightPanel;
@@ -138,6 +148,25 @@ public class TestUI extends JFrame {
 		saveButton = new JButton("Save Image");
 		savePanel.add(saveButton);
 		saveButton.addActionListener(buttonHandler);
+		classTextPanel = new JPanel(new FlowLayout());
+		classTextField = new JTextField(4);
+		classTextPanel.add(new JLabel("Class: "));
+		classTextPanel.add(classTextField);
+		savePanel.add(classTextPanel);
+		pickDesignTestPanel = new JPanel(new GridLayout(1,2));
+		designRadioButton = new JRadioButton("Design");
+		designRadioButton.setMnemonic(KeyEvent.VK_D);
+		designRadioButton.addActionListener(buttonHandler);
+		testRadioButton = new JRadioButton("Test");
+		testRadioButton.setMnemonic(KeyEvent.VK_T);
+		testRadioButton.addActionListener(buttonHandler);
+		groupDesignTest = new ButtonGroup();
+		groupDesignTest.add(designRadioButton);
+		groupDesignTest.add(testRadioButton);
+		designRadioButton.setSelected(true);
+		pickDesignTestPanel.add(designRadioButton);
+		pickDesignTestPanel.add(testRadioButton);
+		savePanel.add(pickDesignTestPanel);
 		controlPanel.add(savePanel);
 		
 		// quit button
@@ -225,8 +254,19 @@ public class TestUI extends JFrame {
 		return processedImage;
 	}
 
+	private boolean isDesign() {
+		if (designRadioButton.isSelected()) 
+			return true;
+		return false;
+	}
+	
 	private int getKValue() {
 		return 3;
+	}
+	
+	private int getClassValue() {
+		String strClass = classTextField.getText();
+		return Integer.parseInt(strClass);
 	}
 	
 	private void processImageFileAndAdd(String strFileName, int c) {
@@ -274,9 +314,7 @@ public class TestUI extends JFrame {
 			} else if (event.getSource() == saveButton) {
 				String strDesignSet = designTextField.getText();
 				String strTestSet = testTextField.getText();
-				boolean isDesign = false;
-				// hard code for now
-				String strIntermediateFileName = String.format("c:/ordata/%s-%s/c%s-", isDesign ? "design" : "test", isDesign ? strDesignSet : strTestSet, "2");
+				String strIntermediateFileName = String.format("c:/ordata/%s-%s/c%s-", isDesign() ? "design" : "test", isDesign() ? strDesignSet : strTestSet, getClassValue());
 				int nextFile = getNextFileName(strIntermediateFileName);
 				String strFileName = String.format("%s%d.jpg", strIntermediateFileName, nextFile);
 				image.csu.fullerton.edu.Image.saveImage(currentImage, strFileName, "JPG");
@@ -332,6 +370,7 @@ public class TestUI extends JFrame {
 				}
 			} else {
 				// ignore
+				System.out.printf("Ignoring event\n");
 			}
 		}
 	}
