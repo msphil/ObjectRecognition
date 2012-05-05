@@ -159,6 +159,7 @@ public class TestUI extends JFrame {
 		ImageIcon newImageIcon = new ImageIcon(newImage);
 		imageLabel.setIcon(newImageIcon);
 		imageLabel.setVisible(true);
+		imageLabel.paint(imageLabel.getGraphics());
 		currentImage = newImage;
 	}
 	
