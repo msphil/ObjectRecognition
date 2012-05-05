@@ -183,6 +183,32 @@ public class TestUI extends JFrame {
 		File f = new File(strNewFileName);
 		return f.exists();
 	}
+
+	private int preProcessingType() {
+		// temporarily hard-code
+		return 1;
+	}
+	
+	private BufferedImage processImage(BufferedImage image) {
+		BufferedImage processedImage = null;
+		
+		setImage(image);
+		processedImage = Image.downscaleImage(image, 256, 160);
+		setImage(processedImage);
+		switch (preProcessingType()) {
+		case 1:
+			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			break;
+		case 2:
+			processedImage = Image.cannyEdgeDetectImage(processedImage);
+			setImage(processedImage);
+		}
+		
+		return processedImage;
+	}
 	
 	private BufferedImage processImage(String strFileName, int c) {
 		// hard code pre-processing/moment size temporarily
@@ -190,48 +216,42 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = null;
 		try {
 			BufferedImage newImage = ImageIO.read(f);
-			processedImage = newImage;
-			
-			processedImage = Image.downscaleImage(newImage, 128, 80);
-			processedImage = Image.desaturateImage(processedImage);
-			processedImage = Image.sobelEdgeDetectImage(processedImage);
-			
-			double[] moments = new double[8];
-			ImageMoments im = new ImageMoments(processedImage);
-			for (int i=1; i <= 8; i++) {
-				moments[i-1] = im.getMoment(i);
-			}
-			knn.addDesign(moments, c);
+			processedImage = processImage(newImage);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return processedImage;
 	}
 
-	private void processImageAndAdd(String strFileName, int c) {
-		// hard code pre-processing/moment size temporarily
+	private int getKValue() {
+		return 3;
+	}
+	
+	private void processImageFileAndAdd(String strFileName, int c) {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
-			double[] moments = new double[8];
 			ImageMoments im = new ImageMoments(processedImage);
-			for (int i=1; i <= 8; i++) {
-				moments[i-1] = im.getMoment(i);
-			}
-			knn.addDesign(moments, c);
+			knn.addDesign(im.getAllMoments(), c);
 		}
 	}
 
-	private int processImageAndTest(String strFileName, int c) {
+	private int processImageFileAndTest(String strFileName, int c) {
 		int ret_c = 0;
-		// hard code pre-processing/moment size temporarily
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
-			double[] moments = new double[8];
 			ImageMoments im = new ImageMoments(processedImage);
-			for (int i=1; i <= 8; i++) {
-				moments[i-1] = im.getMoment(i);
-			}
-			ret_c = knn.testVector(moments, 5);
+			ret_c = knn.testVector(im.getAllMoments(), getKValue());
+		}
+		return ret_c;
+	}
+
+	private int processImageForResult(BufferedImage image) {
+		int ret_c = 0;
+		BufferedImage processedImage = processImage(image);
+		if (processedImage != null) {
+			ImageMoments im = new ImageMoments(processedImage);
+			ret_c = knn.testVector(im.getAllMoments(), getKValue());
 		}
 		return ret_c;
 	}
@@ -259,6 +279,10 @@ public class TestUI extends JFrame {
 				int nextFile = getNextFileName(strIntermediateFileName);
 				String strFileName = String.format("%s%d.jpg", strIntermediateFileName, nextFile);
 				image.csu.fullerton.edu.Image.saveImage(currentImage, strFileName, "JPG");
+			} else if (event.getSource() == evalButton) {
+				System.out.printf("evaluate current image!\n");
+				int c = processImageForResult(currentImage);
+				System.out.printf("Current image evaluated to %d\n", c);
 			} else if (event.getSource() == calcClassifierButton) {
 				System.out.printf("calculate classifier!\n");
 				knn = new KNearestNeighbor();
@@ -271,7 +295,7 @@ public class TestUI extends JFrame {
 						File f = new File(strFileName);
 						if (f.exists()) {
 							System.out.printf("Processing '%s'\n", strFileName);
-							processImage(strFileName, c);
+							processImageFileAndAdd(strFileName, c);
 						} else {
 							done = true;
 						}
@@ -291,7 +315,7 @@ public class TestUI extends JFrame {
 							File f = new File(strFileName);
 							if (f.exists()) {
 								System.out.printf("Processing '%s'\n", strFileName);
-								int eval_c = processImageAndTest(strFileName, c);
+								int eval_c = processImageFileAndTest(strFileName, c);
 								if (eval_c == c) {
 									System.out.printf("'%s' was classified correctly!\n", strFileName);
 								} else {

@@ -124,4 +124,11 @@ public class ImageMoments {
 		}
 		return moments[whichMoment - 1];
 	}
+	
+	double[] getAllMoments() {
+		if (!calculated()) {
+			calculateMoments();
+		}
+		return moments;
+	}
 }
