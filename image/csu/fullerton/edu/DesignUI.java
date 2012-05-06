@@ -217,10 +217,8 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == loadButton) {
 				System.out.print("load\n");
 				JFileChooser chooser = new JFileChooser();
-				// Note: source for ExampleFileFilter can be found in
-				// FileChooserDemo,
-				// under the demo/jfc directory in the Java 2 SDK, Standard
-				// Edition.
+				// Note: source for ExampleFileFilter can be found in FileChooserDemo,
+				// under the demo/jfc directory in the Java 2 SDK, Standard Edition.
 				ImageFileFilter filter = new ImageFileFilter();
 				filter.addExtension("jpg");
 				filter.addExtension("png");

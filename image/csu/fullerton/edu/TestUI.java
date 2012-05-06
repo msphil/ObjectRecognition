@@ -19,6 +19,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class TestUI extends JFrame {
@@ -52,6 +54,8 @@ public class TestUI extends JFrame {
 	private JTextField designTextField;
 	private JTextField testTextField;
 	private JTextField classTextField;
+	
+	private JTextArea confusionTextArea;
 
 	private JLabel imageLabel;
 
@@ -136,7 +140,12 @@ public class TestUI extends JFrame {
 		rightPanel.add(dataPanel);
 		
 		// Confusion Matrix Output
-		rightPanel.add(new JPanel().add(new JLabel("Confusion Matrix")));
+		confusionTextArea = new JTextArea(20, 40);
+		JScrollPane scrollPane = new JScrollPane(confusionTextArea);
+		confusionTextArea.setEditable(false);
+		confusionTextArea.setText("Confusion Matrix\n");
+		confusionTextArea.setTabSize(4);
+		rightPanel.add(scrollPane);
 		
 		// control panel (capture/eval/save/switch/quit)
 		controlPanel = new JPanel();
@@ -254,6 +263,32 @@ public class TestUI extends JFrame {
 		switchFrame = (DesignUI)newFrame;
 	}
 	
+	void displayConfusionMatrix(int[][] confusionMatrix) {
+		int numClasses = confusionMatrix.length;
+		
+		String strConfusionMatrix = new String();
+		
+		confusionTextArea.setText("");
+		// Create header
+		for (int i=0; i < numClasses; i++) {
+			int c = i+1; // class number
+			strConfusionMatrix += String.format("\tC%d",c);
+		}
+		strConfusionMatrix += "\tCCR\n";
+		// Create matrix
+		for (int i=0; i < numClasses; i++) {
+			int total = 0;
+			int c = i+1; // class number
+			strConfusionMatrix += String.format("C%d",c);
+			for (int j=0; j < numClasses; j++) {
+				strConfusionMatrix += String.format("\t%d",confusionMatrix[i][j]);
+				total += confusionMatrix[i][j];
+			}
+			strConfusionMatrix += String.format("\t%.2f%%\n", ((double)confusionMatrix[i][i]/(double)total)*100.0);
+		}
+		confusionTextArea.setText(strConfusionMatrix);
+	}
+	
 	double[] getFeatureVector(ImageMoments im) {
 		double[] all = im.getAllMoments();
 		double[] ret = null;
@@ -313,7 +348,15 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = null;
 		
 		setImage(image);
-		processedImage = Image.downscaleImage(image, 256, 160);
+		int new_w, new_h, w, h;
+		double ratio;
+		w = image.getWidth();
+		h = image.getHeight();
+		ratio = (w > h) ? 256.0 / (double)w : 256.0 / (double)w;
+		new_w = (int)(ratio * (double)w);
+		new_h = (int)(ratio * (double)h);
+		
+		processedImage = Image.downscaleImage(image, new_w, new_h);
 		setImage(processedImage);
 		switch (preProcessingType()) {
 		case 1:
@@ -395,6 +438,46 @@ public class TestUI extends JFrame {
 		}
 		return ret_c;
 	}
+	
+	private int getNumTestClasses() {
+		int c = 1;
+		while (classHasFiles(String.format("c:/ordata/test-%s",testTextField.getText()), String.format("%d",c))) {
+			c++;
+		}
+		return c-1;
+	}
+	
+	private void testData() {
+		if (knn != null) {
+			int c = 1;
+			int numClasses = getNumTestClasses();
+			int[][] confusionMatrix = new int[numClasses][numClasses];
+			while (classHasFiles(String.format("c:/ordata/test-%s",testTextField.getText()), String.format("%d",c))) {
+				int i = 1;
+				boolean done = false;
+				while (!done) {
+					String strFileName = String.format("c:/ordata/test-%s/c%d-%d.jpg",testTextField.getText(),c,i);
+					File f = new File(strFileName);
+					if (f.exists()) {
+						System.out.printf("Processing '%s'\n", strFileName);
+						int eval_c = processImageFileAndTest(strFileName, c);
+						if (eval_c == c) {
+							System.out.printf("'%s' was classified correctly!\n", strFileName);
+							confusionMatrix[c-1][c-1]++;
+						} else {
+							System.out.printf("'%s' (expected %d) was mis-classified as %d\n", strFileName, c, eval_c);
+							confusionMatrix[c-1][eval_c-1]++;
+						}
+					} else {
+						done = true;
+					}
+					i++;
+				}
+				c++;
+			}
+			displayConfusionMatrix(confusionMatrix);
+		}
+	}
 
 	// ButtonHandler: 
 	private class ButtonHandler implements ActionListener {
@@ -444,30 +527,7 @@ public class TestUI extends JFrame {
 				}
 			} else if (event.getSource() == testDataButton) {
 				System.out.printf("test data!\n");
-				if (knn != null) {
-					int c = 1;
-					while (classHasFiles(String.format("c:/ordata/test-%s",testTextField.getText()), String.format("%d",c))) {
-						int i = 1;
-						boolean done = false;
-						while (!done) {
-							String strFileName = String.format("c:/ordata/test-%s/c%d-%d.jpg",testTextField.getText(),c,i);
-							File f = new File(strFileName);
-							if (f.exists()) {
-								System.out.printf("Processing '%s'\n", strFileName);
-								int eval_c = processImageFileAndTest(strFileName, c);
-								if (eval_c == c) {
-									System.out.printf("'%s' was classified correctly!\n", strFileName);
-								} else {
-									System.out.printf("'%s' (expected %d) was mis-classified as %d\n", strFileName, c, eval_c);
-								}
-							} else {
-								done = true;
-							}
-							i++;
-						}
-						c++;
-					}
-				}
+				testData();
 			} else {
 				// ignore
 				System.out.printf("Ignoring event\n");
