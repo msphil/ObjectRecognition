@@ -2,7 +2,6 @@ package image.csu.fullerton.edu;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Image;
 import java.awt.Panel;
 import java.awt.image.BufferedImage;
 
@@ -15,7 +14,6 @@ import javax.media.Player;
 import javax.media.control.FrameGrabbingControl;
 import javax.media.format.VideoFormat;
 import javax.media.util.BufferToImage;
-import javax.swing.JPanel;
 
 public class CaptureCamera {
 	
@@ -40,7 +38,7 @@ public class CaptureCamera {
 	void addToPanel(Panel cameraPanel) {
         Component comp;
         if ((comp = player.getVisualComponent()) != null) {
-            cameraPanel.add(comp, BorderLayout.NORTH);
+            cameraPanel.add(comp, BorderLayout.CENTER);
         } else {
         	System.out.printf("Unable to obtain visual component for camera!\n");
         }

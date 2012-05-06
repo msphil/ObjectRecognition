@@ -23,7 +23,7 @@ import javax.swing.JTextField;
 
 public class TestUI extends JFrame {
 	
-	private JFrame switchFrame;
+	private DesignUI switchFrame;
 
 	private JButton captureButton;
 	private JButton loadButton;
@@ -66,7 +66,7 @@ public class TestUI extends JFrame {
 	private KNearestNeighbor knn;
 	
 	// Constructor: create the interface
-	public TestUI() {
+	public TestUI(CaptureCamera camera) {
 		// Set title and layout
 		super("Object Recognition -- Design");
 
@@ -104,7 +104,7 @@ public class TestUI extends JFrame {
 
 		// video camera capture
 		cameraPanel = new ImagePanel();
-		camera = new CaptureCamera();
+		this.camera = camera;
 		camera.addToPanel(cameraPanel);
 		leftPanel.add(cameraPanel);		
 		
@@ -238,6 +238,10 @@ public class TestUI extends JFrame {
 
 	}
 	
+	public void bondCamera() {
+		camera.addToPanel(cameraPanel);
+	}
+	
 	private void setImage(BufferedImage newImage) {
 		ImageIcon newImageIcon = new ImageIcon(newImage);
 		imageLabel.setIcon(newImageIcon);
@@ -247,7 +251,7 @@ public class TestUI extends JFrame {
 	}
 	
 	void setSwitcher(JFrame newFrame) {
-		switchFrame = newFrame;
+		switchFrame = (DesignUI)newFrame;
 	}
 	
 	double[] getFeatureVector(ImageMoments im) {
@@ -403,6 +407,7 @@ public class TestUI extends JFrame {
 				TestUI.this.setVisible(false);
 				switchFrame.setVisible(true);
 				switchFrame.setBounds(TestUI.this.getBounds());
+				switchFrame.bondCamera();
 			} else if (event.getSource() == captureButton) {
 				System.out.print("capture\n");
 				setImage(camera.captureImage());

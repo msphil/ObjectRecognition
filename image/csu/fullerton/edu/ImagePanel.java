@@ -1,4 +1,5 @@
 package image.csu.fullerton.edu;
+import java.awt.BorderLayout;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Panel;
@@ -9,7 +10,7 @@ public class ImagePanel extends Panel {
 	public Image myimg = null;
 
 	public ImagePanel() {
-		setLayout(null);
+		setLayout(new BorderLayout());
 		setSize(320, 240);
 	}
 

@@ -23,7 +23,7 @@ import javax.swing.JPanel;
 
 public class DesignUI extends JFrame {
 
-	private JFrame switchFrame;
+	private TestUI switchFrame;
 	
 	private JButton captureButton;
 	private JButton loadButton;
@@ -58,7 +58,7 @@ public class DesignUI extends JFrame {
 	private String savedDirectoryPath;
 
 	// Constructor: create the interface
-	public DesignUI() {
+	public DesignUI(CaptureCamera camera) {
 		// Set title and layout
 		super("Object Recognition -- Design");
 
@@ -109,8 +109,8 @@ public class DesignUI extends JFrame {
 		
 		// video camera capture
 		cameraPanel = new ImagePanel();
-		//camera = new CaptureCamera();
-		//camera.addToPanel(cameraPanel);
+		this.camera = camera;
+		camera.addToPanel(cameraPanel);
 		bottomPanel.add(cameraPanel);		
 
 		// save button
@@ -148,6 +148,10 @@ public class DesignUI extends JFrame {
 
 	}
 
+	public void bondCamera() {
+		camera.addToPanel(cameraPanel);
+	}
+	
 	private void setImage(BufferedImage newImage) {
 		ImageIcon newImageIcon = new ImageIcon(newImage);
 		imageLabel.setIcon(newImageIcon);
@@ -156,7 +160,7 @@ public class DesignUI extends JFrame {
 	}
 	
 	void setSwitcher(JFrame newFrame) {
-		switchFrame = newFrame;
+		switchFrame = (TestUI)newFrame;
 	}
 
 	private class ImageFileFilter extends javax.swing.filechooser.FileFilter {
@@ -209,6 +213,7 @@ public class DesignUI extends JFrame {
 				DesignUI.this.setVisible(false);
 				switchFrame.setVisible(true);
 				switchFrame.setBounds(DesignUI.this.getBounds());
+				switchFrame.bondCamera();
 			} else if (event.getSource() == loadButton) {
 				System.out.print("load\n");
 				JFileChooser chooser = new JFileChooser();
