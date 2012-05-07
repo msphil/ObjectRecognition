@@ -38,6 +38,7 @@ public class TestUI extends JFrame {
 	private JRadioButton testRadioButton;
 	private ButtonGroup groupDesignTest;
 	
+	private JRadioButton desatRadioButton;
 	private JRadioButton sobelRadioButton;
 	private JRadioButton sobelThresholdRadioButton;
 	private JRadioButton cannyRadioButton;
@@ -54,6 +55,7 @@ public class TestUI extends JFrame {
 	private JTextField designTextField;
 	private JTextField testTextField;
 	private JTextField classTextField;
+	private JTextField scaleTextField;
 	
 	private JTextArea confusionTextArea;
 
@@ -136,6 +138,14 @@ public class TestUI extends JFrame {
 		testDataButton = new JButton("Test Data With Current Classifier");
 		testDataButton.addActionListener(buttonHandler);
 		dataPanel.add(testDataButton);
+		
+		JPanel scalePanel = new JPanel(new FlowLayout());
+		scalePanel.add(new JLabel("Scale: "));
+		scaleTextField = new JTextField(5);
+		scaleTextField.setText("32");
+		scalePanel.add(scaleTextField);
+		
+		dataPanel.add(scalePanel);
 
 		rightPanel.add(dataPanel);
 		
@@ -207,6 +217,8 @@ public class TestUI extends JFrame {
 		classAndFeaturePanel.setLayout(new BoxLayout(classAndFeaturePanel, BoxLayout.PAGE_AXIS));
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("feature selection:")));
 		
+		desatRadioButton = new JRadioButton("Desaturate Only");
+		desatRadioButton.addActionListener(buttonHandler);
 		sobelRadioButton = new JRadioButton("Sobel Edge Detection");
 		sobelRadioButton.addActionListener(buttonHandler);
 		sobelThresholdRadioButton = new JRadioButton("Sobel + Threshold");
@@ -214,10 +226,12 @@ public class TestUI extends JFrame {
 		cannyRadioButton = new JRadioButton("Canny Edge Detection");
 		cannyRadioButton.addActionListener(buttonHandler);
 		groupFeatureSet = new ButtonGroup();
+		groupFeatureSet.add(desatRadioButton);
 		groupFeatureSet.add(sobelRadioButton);
 		groupFeatureSet.add(sobelThresholdRadioButton);
 		groupFeatureSet.add(cannyRadioButton);
 		sobelRadioButton.setSelected(true);
+		classAndFeaturePanel.add(desatRadioButton);
 		classAndFeaturePanel.add(sobelRadioButton);
 		classAndFeaturePanel.add(sobelThresholdRadioButton);
 		classAndFeaturePanel.add(cannyRadioButton);
@@ -333,21 +347,10 @@ public class TestUI extends JFrame {
 		return f.exists();
 	}
 
-	private int preProcessingType() {
-		if (sobelRadioButton.isSelected()) {
-			return 1;
-		} else if (sobelThresholdRadioButton.isSelected()) {
-			return 2;
-		} else if (cannyRadioButton.isSelected()) {
-			return 3;
-		} else 
-			return 0;
-	}
-	
 	private BufferedImage processImage(BufferedImage image) {
 		BufferedImage processedImage = null;
 		
-		int scale = 32;
+		int scale = getScaleValue();
 		
 		setImage(image);
 		int new_w, new_h, w, h;
@@ -360,28 +363,31 @@ public class TestUI extends JFrame {
 		
 		processedImage = Image.downscaleImage(image, new_w, new_h);
 		setImage(processedImage);
-		switch (preProcessingType()) {
-		case 1:
+		if (sobelRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
-			break;
-		case 2:
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (sobelThresholdRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.thresholdImage(processedImage);
 			setImage(processedImage);
-			break;
-		case 3:
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (cannyRadioButton.isSelected()) {
 			processedImage = Image.cannyEdgeDetectImage(processedImage);
 			setImage(processedImage);
-			break;
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (desatRadioButton.isSelected()) {
+			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
 		}
-		processedImage = Image.invertImage(currentImage);
-		setImage(processedImage);
 		
 		return processedImage;
 	}
@@ -413,6 +419,11 @@ public class TestUI extends JFrame {
 	private int getClassValue() {
 		String strClass = classTextField.getText();
 		return Integer.parseInt(strClass);
+	}
+	
+	private int getScaleValue() {
+		String strScale = scaleTextField.getText();
+		return Integer.parseInt(strScale);
 	}
 	
 	private void processImageFileAndAdd(String strFileName, int c) {
