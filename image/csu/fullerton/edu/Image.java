@@ -175,6 +175,31 @@ public class Image {
 		}
 		return newImage;
 	}
+	
+	static BufferedImage invertImage(BufferedImage currentImage) {
+		System.out.printf("thresholdImage\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			newImage = new BufferedImage(currentImage.getWidth(), currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			int[] lookup = new int[256];
+			for (int i = 0; i < 256; i++) {
+				lookup[i] = 255 - i;
+			}
+			for (int y = 0; y < currentImage.getHeight(); y++) {
+				for (int x = 0; x < currentImage.getWidth(); x++) {
+					int r, g, b, a;
+					Color pixel = new Color(currentImage.getRGB(x, y));
+					b = pixel.getBlue();
+					g = pixel.getGreen();
+					r = pixel.getRed();
+					a = pixel.getAlpha();
+					Color newPixel = new Color(lookup[r], lookup[g], lookup[b], a);
+					newImage.setRGB(x, y, newPixel.getRGB());
+				}
+			}
+		}
+		return newImage;
+	}
 
 	static BufferedImage thresholdImage(BufferedImage currentImage) {
 		System.out.printf("thresholdImage\n");
