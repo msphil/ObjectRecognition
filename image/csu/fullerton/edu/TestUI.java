@@ -347,12 +347,14 @@ public class TestUI extends JFrame {
 	private BufferedImage processImage(BufferedImage image) {
 		BufferedImage processedImage = null;
 		
+		int scale = 32;
+		
 		setImage(image);
 		int new_w, new_h, w, h;
 		double ratio;
 		w = image.getWidth();
 		h = image.getHeight();
-		ratio = (w > h) ? 256.0 / (double)w : 256.0 / (double)w;
+		ratio = (w > h) ? (double)scale / (double)w : (double)scale / (double)w;
 		new_w = (int)(ratio * (double)w);
 		new_h = (int)(ratio * (double)h);
 		
@@ -378,6 +380,8 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			break;
 		}
+		processedImage = Image.invertImage(currentImage);
+		setImage(processedImage);
 		
 		return processedImage;
 	}
