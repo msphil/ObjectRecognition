@@ -14,7 +14,6 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,10 +24,11 @@ import javax.swing.JTextField;
 
 public class TestUI extends JFrame {
 	
+	final private String defaultDataSet = "tiles";
+	
 	private DesignUI switchFrame;
 
 	private JButton captureButton;
-	private JButton loadButton;
 	private JButton saveButton;
 	private JButton evalButton;
 	private JButton switchButton;
@@ -124,11 +124,13 @@ public class TestUI extends JFrame {
 		dataPanel.setLayout(new BoxLayout(dataPanel, BoxLayout.PAGE_AXIS));
 		designTextPanel = new JPanel(new FlowLayout());
 		designTextField = new JTextField(10);
+		designTextField.setText(defaultDataSet);
 		designTextPanel.add(new JLabel("Design: "));
 		designTextPanel.add(designTextField);
 		dataPanel.add(designTextPanel);
 		testTextPanel = new JPanel(new FlowLayout());
 		testTextField = new JTextField(10);
+		testTextField.setText(defaultDataSet);
 		testTextPanel.add(new JLabel("Test: "));
 		testTextPanel.add(testTextField);
 		dataPanel.add(testTextPanel);
