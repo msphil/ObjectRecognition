@@ -37,6 +37,8 @@ public class DesignUI extends JFrame {
 	private JButton sobelButton;
 	private JButton cannyEdgeDetectButton;
 	private JButton thresholdButton;
+	private JButton otsuThresholdButton;
+	private JButton meanShiftButton;
 	private JButton momentsButton;
 
 	private JPanel imagePanel;
@@ -55,7 +57,7 @@ public class DesignUI extends JFrame {
 	
 	private BufferedImage currentImage;
 
-	private String savedDirectoryPath;
+	private String savedDirectoryPath = "c:/ordata";
 
 	// Constructor: create the interface
 	public DesignUI(CaptureCamera camera) {
@@ -100,6 +102,12 @@ public class DesignUI extends JFrame {
 		thresholdButton = new JButton("Threshold");
 		thresholdButton.addActionListener(buttonHandler);
 		processPanel.add(thresholdButton);
+		otsuThresholdButton = new JButton("Otsu Threshold");
+		otsuThresholdButton.addActionListener(buttonHandler);
+		processPanel.add(otsuThresholdButton);
+		meanShiftButton = new JButton("Mean Shift");
+		meanShiftButton.addActionListener(buttonHandler);
+		processPanel.add(meanShiftButton);
 		momentsButton = new JButton("Calculate Moments");
 		momentsButton.addActionListener(buttonHandler);
 		processPanel.add(momentsButton);
@@ -257,7 +265,12 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == cannyEdgeDetectButton) {
 				setImage(image.csu.fullerton.edu.Image.cannyEdgeDetectImage(currentImage));
 			} else if (event.getSource() == thresholdButton) {
-				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage));
+				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, 128));
+			} else if (event.getSource() == otsuThresholdButton) {
+				int thresh = image.csu.fullerton.edu.Image.otsuThreshold(currentImage);
+				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, thresh));
+			} else if (event.getSource() == meanShiftButton) {
+				setImage(image.csu.fullerton.edu.Image.meanShift(currentImage));
 			} else if (event.getSource() == momentsButton) {
 				image.csu.fullerton.edu.Image.calculateMoments(currentImage);
 			} else {

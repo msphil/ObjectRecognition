@@ -39,9 +39,11 @@ public class TestUI extends JFrame {
 	private ButtonGroup groupDesignTest;
 	
 	private JRadioButton desatRadioButton;
+	private JRadioButton otsuThresholdRadioButton;
 	private JRadioButton sobelRadioButton;
 	private JRadioButton sobelThresholdRadioButton;
 	private JRadioButton cannyRadioButton;
+	private JRadioButton segmentRadioButton;
 	private ButtonGroup groupFeatureSet;
 	
 	private JRadioButton hu6RadioButton;
@@ -221,22 +223,30 @@ public class TestUI extends JFrame {
 		
 		desatRadioButton = new JRadioButton("Desaturate Only");
 		desatRadioButton.addActionListener(buttonHandler);
+		otsuThresholdRadioButton = new JRadioButton("otsu threshold only");
+		otsuThresholdRadioButton.addActionListener(buttonHandler);
 		sobelRadioButton = new JRadioButton("Sobel Edge Detection");
 		sobelRadioButton.addActionListener(buttonHandler);
 		sobelThresholdRadioButton = new JRadioButton("Sobel + Threshold");
 		sobelThresholdRadioButton.addActionListener(buttonHandler);
 		cannyRadioButton = new JRadioButton("Canny Edge Detection");
 		cannyRadioButton.addActionListener(buttonHandler);
+		segmentRadioButton = new JRadioButton("mean shift segment + canny");
+		segmentRadioButton.addActionListener(buttonHandler);
 		groupFeatureSet = new ButtonGroup();
 		groupFeatureSet.add(desatRadioButton);
+		groupFeatureSet.add(otsuThresholdRadioButton);
 		groupFeatureSet.add(sobelRadioButton);
 		groupFeatureSet.add(sobelThresholdRadioButton);
 		groupFeatureSet.add(cannyRadioButton);
+		groupFeatureSet.add(segmentRadioButton);
 		sobelRadioButton.setSelected(true);
 		classAndFeaturePanel.add(desatRadioButton);
+		classAndFeaturePanel.add(otsuThresholdRadioButton);
 		classAndFeaturePanel.add(sobelRadioButton);
 		classAndFeaturePanel.add(sobelThresholdRadioButton);
 		classAndFeaturePanel.add(cannyRadioButton);
+		classAndFeaturePanel.add(segmentRadioButton);
 		
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("moment size selection:")));
 		
@@ -292,16 +302,26 @@ public class TestUI extends JFrame {
 		}
 		strConfusionMatrix += "\tCCR\n";
 		// Create matrix
+		
+		int totalGood = 0;
+		int total = 0;
 		for (int i=0; i < numClasses; i++) {
-			int total = 0;
+			int classTotal = 0;
 			int c = i+1; // class number
 			strConfusionMatrix += String.format("C%d",c);
 			for (int j=0; j < numClasses; j++) {
 				strConfusionMatrix += String.format("\t%d",confusionMatrix[i][j]);
-				total += confusionMatrix[i][j];
+				classTotal += confusionMatrix[i][j];
 			}
-			strConfusionMatrix += String.format("\t%.2f%%\n", ((double)confusionMatrix[i][i]/(double)total)*100.0);
+			totalGood += confusionMatrix[i][i];
+			total += classTotal;
+			strConfusionMatrix += String.format("\t%.2f%%\n", ((double)confusionMatrix[i][i]/(double)classTotal)*100.0);
 		}
+		strConfusionMatrix += String.format("Total:");
+		for (int i=0; i < numClasses; i++) {
+			strConfusionMatrix += String.format("\t");
+		}
+		strConfusionMatrix += String.format("\t%.2f%%\n", ((double)totalGood/(double)total)*100.0);
 		confusionTextArea.setText(strConfusionMatrix);
 	}
 	
@@ -309,24 +329,54 @@ public class TestUI extends JFrame {
 		double[] all = im.getAllMoments();
 		double[] ret = null;
 		if (hu6RadioButton.isSelected()) {
-			ret = new double[6];
-			ret[0] = all[0];
-			ret[1] = all[3];
-			ret[2] = all[4];
-			ret[3] = all[5];
-			ret[4] = all[6];
-			ret[5] = all[7];
+			if (false) {
+				ret = new double[6];
+				ret[0] = all[0];
+				ret[1] = all[3];
+				ret[2] = all[4];
+				ret[3] = all[5];
+				ret[4] = all[6];
+				ret[5] = all[7];
+			} else {
+				ret = new double[5];
+				ret[0] = all[0];
+				ret[1] = all[3];
+				ret[2] = all[4];
+				ret[3] = all[5];
+				ret[4] = all[7];
+			}
 		} else if (hu7RadioButton.isSelected()) {
-			ret = new double[7];
-			ret[0] = all[0];
-			ret[1] = all[1];
-			ret[2] = all[2];
-			ret[3] = all[3];
-			ret[4] = all[4];
-			ret[5] = all[5];
-			ret[6] = all[6];
+			if (false) {
+				ret = new double[7];
+				ret[0] = all[0];
+				ret[1] = all[1];
+				ret[2] = all[2];
+				ret[3] = all[3];
+				ret[4] = all[4];
+				ret[5] = all[5];
+				ret[6] = all[6];
+			} else {
+				ret = new double[6];
+				ret[0] = all[0];
+				ret[1] = all[1];
+				ret[2] = all[2];
+				ret[3] = all[3];
+				ret[4] = all[4];
+				ret[5] = all[5];
+			}
 		} else {
-			ret = all;
+			if (false) {
+				ret = all;
+			} else {
+				ret = new double[7];
+				ret[0] = all[0];
+				ret[1] = all[1];
+				ret[2] = all[2];
+				ret[3] = all[3];
+				ret[4] = all[4];
+				ret[5] = all[5];
+				ret[6] = all[7];
+			}
 		}
 		return ret;
 	}
@@ -377,7 +427,7 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
-			processedImage = Image.thresholdImage(processedImage);
+			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
 			setImage(processedImage);
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
@@ -389,13 +439,32 @@ public class TestUI extends JFrame {
 		} else if (desatRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
+		} else if (otsuThresholdRadioButton.isSelected()) {
+			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
+			setImage(processedImage);
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (segmentRadioButton.isSelected()) {
+			//processedImage = Image.sobelEdgeDetectImage(processedImage);
+			//setImage(processedImage);
+			for (int i=0; i < 5; i++) {
+				processedImage = Image.meanShift(processedImage);
+				setImage(processedImage);
+			}
+			processedImage = Image.cannyEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			//processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
+			//setImage(processedImage);
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
 		}
 		
 		return processedImage;
 	}
 	
 	private BufferedImage processImage(String strFileName, int c) {
-		// hard code pre-processing/moment size temporarily
 		File f = new File(strFileName);
 		BufferedImage processedImage = null;
 		try {
