@@ -41,6 +41,8 @@ public class TestUI extends JFrame {
 	private JRadioButton testRadioButton;
 	private ButtonGroup groupDesignTest;
 	
+	private JRadioButton cropRadioButton;
+	private JRadioButton bgRadioButton;
 	private JRadioButton desatRadioButton;
 	private JRadioButton otsuThresholdRadioButton;
 	private JRadioButton sobelRadioButton;
@@ -231,6 +233,10 @@ public class TestUI extends JFrame {
 		classAndFeaturePanel.setLayout(new BoxLayout(classAndFeaturePanel, BoxLayout.PAGE_AXIS));
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("feature selection:")));
 		
+		cropRadioButton = new JRadioButton("Crop Only");
+		cropRadioButton.addActionListener(buttonHandler);
+		bgRadioButton = new JRadioButton("Remove Background and Crop");
+		bgRadioButton.addActionListener(buttonHandler);
 		desatRadioButton = new JRadioButton("Desaturate Only");
 		desatRadioButton.addActionListener(buttonHandler);
 		otsuThresholdRadioButton = new JRadioButton("otsu threshold only");
@@ -248,6 +254,8 @@ public class TestUI extends JFrame {
 		segmentRadioButton = new JRadioButton("segment + canny");
 		segmentRadioButton.addActionListener(buttonHandler);
 		groupFeatureSet = new ButtonGroup();
+		groupFeatureSet.add(cropRadioButton);
+		groupFeatureSet.add(bgRadioButton);
 		groupFeatureSet.add(desatRadioButton);
 		groupFeatureSet.add(otsuThresholdRadioButton);
 		groupFeatureSet.add(sobelRadioButton);
@@ -256,7 +264,10 @@ public class TestUI extends JFrame {
 		groupFeatureSet.add(segmentCannyRadioButton);
 		groupFeatureSet.add(meanShiftRadioButton);
 		groupFeatureSet.add(segmentRadioButton);
-		sobelRadioButton.setSelected(true);
+		//sobelRadioButton.setSelected(true);
+		bgRadioButton.setSelected(true);
+		classAndFeaturePanel.add(bgRadioButton);
+		classAndFeaturePanel.add(cropRadioButton);
 		classAndFeaturePanel.add(desatRadioButton);
 		classAndFeaturePanel.add(otsuThresholdRadioButton);
 		classAndFeaturePanel.add(sobelRadioButton);
@@ -451,6 +462,29 @@ public class TestUI extends JFrame {
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (cropRadioButton.isSelected()) {
+			processedImage = Image.cropImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
+		} else if (bgRadioButton.isSelected()) {
+			processedImage = Image.downscaleImage(processedImage, processedImage.getWidth()/4, processedImage.getWidth()/4);
+			setImage(processedImage);
+			processedImage = Image.removeBackground(processedImage);
+			setImage(processedImage);
+			processedImage = Image.cropImage(processedImage);
+			setImage(processedImage);
+			w = processedImage.getWidth();
+			h = processedImage.getHeight();
+			ratio = (w > h) ? (double)scale / (double)w : (double)scale / (double)w;
+			new_w = (int)(ratio * (double)w);
+			new_h = (int)(ratio * (double)h);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
+			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
 			setImage(processedImage);
 		} else if (sobelThresholdRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);

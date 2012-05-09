@@ -13,6 +13,166 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 public class Image {
+
+    private static int[][] imageRBGHistogram(BufferedImage input) {
+
+        int[][] histogram = new int[3][256];
+
+        for(int i=0; i<histogram.length; i++)
+        	for (int j=0; j<histogram[i].length; j++)
+        		histogram[i][j] = 0;
+
+        for(int i=0; i<input.getWidth(); i++) {
+            for(int j=0; j<input.getHeight(); j++) {
+            	Color c = new Color(input.getRGB (i, j));
+            	histogram[0][c.getRed()]++;
+            	histogram[1][c.getGreen()]++;
+            	histogram[2][c.getBlue()]++;
+            }
+        }
+
+        for(int i=0; i<histogram.length; i++) {
+        	for (int j=0; j<histogram[i].length; j++) {
+        		System.out.printf("%04d ", histogram[i][j]);
+        	}
+        	System.out.printf("\n");
+        }
+
+        return histogram;
+
+    }
+    
+    private static boolean nearBlack(Color c) {
+    	int threshold = 16;
+    	return ( (c.getRed() < threshold) &&
+    			(c.getGreen() < threshold) &&
+    			(c.getBlue() < threshold));
+    }
+    
+    static BufferedImage maskByEdge(BufferedImage currentImage, BufferedImage edgeImage) {
+		System.out.printf("maskByEdge\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			newImage = new BufferedImage(currentImage.getWidth(),
+					currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			{
+				int width = edgeImage.getWidth();
+				int height = edgeImage.getHeight();
+				int lx = 0, uy = 0, rx = width, ly = height;
+				int replacement = 0xFFFFFFFF;
+				newImage.setRGB(0, 0, width, height, currentImage.getRGB(0, 0, width, height, null, 0, width), 0, width);
+				// find left margin
+				for (int x = 0; x < width; x++) {
+					boolean clear = true;
+					for (int y = 0; y < height; y++) {
+						Color c = new Color(edgeImage.getRGB(x, y));
+						if (!nearBlack(c)) {
+							clear = false;
+							break;
+						} else {
+							newImage.setRGB(x, y, replacement);
+						}
+					}
+					if (!clear) {
+						if (x - 1 < lx)
+							lx = x - 1;
+					}
+				}
+				// find right margin
+				for (int x = width-1; x > 0; x--) {
+					boolean clear = true;
+					for (int y = height-1; y > 0; y--) {
+						Color c = new Color(edgeImage.getRGB(x, y));
+						if (!nearBlack(c)) {
+							clear = false;
+							break;
+						} else {
+							newImage.setRGB(x, y, replacement);
+						}
+					}
+					if (!clear) {
+						if (x+1 > rx)
+							rx = x + 1;
+					}
+				}
+				// find top margin
+				for (int y = 0; y < height; y++) {
+					boolean clear = true;
+					for (int x = 0; x < width; x++) {
+						Color c = new Color(edgeImage.getRGB(x, y));
+						if (!nearBlack(c)) {
+							clear = false;
+							break;
+						} else {
+							newImage.setRGB(x, y, replacement);
+						}
+					}
+					if (!clear) {
+						if (y-1 < uy)
+							uy = y - 1;
+						
+					}
+				}
+				// find bottom margin
+				for (int y = height - 1; y > 0; y--) {
+					boolean clear = true;
+					for (int x = width-1; x > 0; x--) {
+						Color c = new Color(edgeImage.getRGB(x, y));
+						if (!nearBlack(c)) {
+							clear = false;
+							break;
+						} else {
+							newImage.setRGB(x, y, replacement);
+						}
+					}
+					if (!clear) {
+						if (y+1 > ly)
+							ly = y + 1;
+					}
+				}
+				//newImage.setRGB(0,  0, width, height, edgeImage.getRGB(0, 0, width, height, null, 0, width), 0, width);
+			}
+		}
+		return newImage;
+    }
+
+	static BufferedImage removeBackground(BufferedImage currentImage) {
+		System.out.printf("removeBackground\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			if (true) {
+				BufferedImage edgeImage = sobelEdgeDetectImage(currentImage);
+				edgeImage = meanShift(edgeImage);
+				newImage = maskByEdge(currentImage, edgeImage);
+			} else {
+				// stupid idea
+				BufferedImage bgImage;
+				File f = new File("c:/ordata/background.jpg");
+				try {
+					bgImage = ImageIO.read(f);
+					newImage = new BufferedImage(currentImage.getWidth(),
+							currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+					int[][] bgHist = imageRBGHistogram(bgImage);
+					for (int x=0; x < currentImage.getWidth(); x++) { 
+						for (int y=0; y < currentImage.getHeight(); y++) {
+							Color c = new Color(currentImage.getRGB(x, y));
+							if ((bgHist[0][c.getRed()] > 0) &&
+									(bgHist[1][c.getGreen()] > 0) &&
+									(bgHist[2][c.getBlue()] > 0)) {
+								newImage.setRGB(x, y, 0xFFFFFFFF);
+							} else {
+								newImage.setRGB(x, y, c.getRGB());
+							}
+						}
+					}
+					//int[][] fgHist = imageRBGHistogram(currentImage);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return newImage;
+	}
 	
 	static BufferedImage desaturateImage(BufferedImage currentImage) {
 		System.out.printf("desaturateImage\n");

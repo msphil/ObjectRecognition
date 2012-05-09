@@ -42,6 +42,7 @@ public class DesignUI extends JFrame {
 	private JButton meanShiftButton;
 	private JButton segmentButton;
 	private JButton cropButton;
+	private JButton bgButton;
 	private JButton momentsButton;
 
 	private JPanel imagePanel;
@@ -120,6 +121,9 @@ public class DesignUI extends JFrame {
 		cropButton = new JButton("Crop");
 		cropButton.addActionListener(buttonHandler);
 		processPanel.add(cropButton);
+		bgButton = new JButton("Remove Background");
+		bgButton.addActionListener(buttonHandler);
+		processPanel.add(bgButton);
 		momentsButton = new JButton("Calculate Moments");
 		momentsButton.addActionListener(buttonHandler);
 		processPanel.add(momentsButton);
@@ -276,7 +280,7 @@ public class DesignUI extends JFrame {
 				System.out.print("capture\n");
 				setImage(camera.captureImage());
 			} else if (event.getSource() == saveButton) {
-				image.csu.fullerton.edu.Image.saveImage(currentImage, "c:/ordata/test/test.jpg", "JPG");
+				image.csu.fullerton.edu.Image.saveImage(currentImage, "c:/ordata/test.jpg", "JPG");
 			} else if (event.getSource() == desaturateButton) {
 				setImage(image.csu.fullerton.edu.Image.desaturateImage(currentImage));
 			} else if (event.getSource() == downscaleButton) {
@@ -300,6 +304,8 @@ public class DesignUI extends JFrame {
 				setImage(image.csu.fullerton.edu.Image.segmentImage(currentImage));
 			} else if (event.getSource() == cropButton) {
 				setImage(image.csu.fullerton.edu.Image.cropImage(currentImage));
+			} else if (event.getSource() == bgButton) {
+				setImage(image.csu.fullerton.edu.Image.removeBackground(currentImage));
 			} else if (event.getSource() == momentsButton) {
 				image.csu.fullerton.edu.Image.calculateMoments(currentImage);
 			} else {
