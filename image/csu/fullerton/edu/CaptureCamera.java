@@ -18,6 +18,8 @@ import javax.media.util.BufferToImage;
 public class CaptureCamera {
 	
     private Player player;
+    
+    private final boolean enableCameraDisplay = true;
 
 	CaptureCamera() {
 		player = null;
@@ -36,12 +38,14 @@ public class CaptureCamera {
 	}
 	
 	void addToPanel(Panel cameraPanel) {
-        Component comp;
-        if ((comp = player.getVisualComponent()) != null) {
-            cameraPanel.add(comp, BorderLayout.CENTER);
-        } else {
-        	System.out.printf("Unable to obtain visual component for camera!\n");
-        }
+		if (enableCameraDisplay) {
+	        Component comp;
+	        if ((comp = player.getVisualComponent()) != null) {
+	            cameraPanel.add(comp, BorderLayout.CENTER);
+	        } else {
+	        	System.out.printf("Unable to obtain visual component for camera!\n");
+	        }
+		}
 	}
 
 	public BufferedImage captureImage() {
