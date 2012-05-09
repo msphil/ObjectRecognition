@@ -26,6 +26,9 @@ public class TestUI extends JFrame {
 	
 	final private String defaultDataSet = "tiles";
 	
+	final private boolean includeHu7 = true;
+	final private boolean pauseAfterProcess = false;
+	
 	private DesignUI switchFrame;
 
 	private JButton captureButton;
@@ -43,6 +46,7 @@ public class TestUI extends JFrame {
 	private JRadioButton sobelRadioButton;
 	private JRadioButton sobelThresholdRadioButton;
 	private JRadioButton cannyRadioButton;
+	private JRadioButton segmentCannyRadioButton;
 	private JRadioButton meanShiftRadioButton;
 	private JRadioButton segmentRadioButton;
 	private ButtonGroup groupFeatureSet;
@@ -237,6 +241,8 @@ public class TestUI extends JFrame {
 		sobelThresholdRadioButton.addActionListener(buttonHandler);
 		cannyRadioButton = new JRadioButton("Canny Edge Detection");
 		cannyRadioButton.addActionListener(buttonHandler);
+		segmentCannyRadioButton = new JRadioButton("segment + canny");
+		segmentCannyRadioButton.addActionListener(buttonHandler);
 		meanShiftRadioButton = new JRadioButton("mean shift segment + canny");
 		meanShiftRadioButton.addActionListener(buttonHandler);
 		segmentRadioButton = new JRadioButton("segment + canny");
@@ -247,6 +253,7 @@ public class TestUI extends JFrame {
 		groupFeatureSet.add(sobelRadioButton);
 		groupFeatureSet.add(sobelThresholdRadioButton);
 		groupFeatureSet.add(cannyRadioButton);
+		groupFeatureSet.add(segmentCannyRadioButton);
 		groupFeatureSet.add(meanShiftRadioButton);
 		groupFeatureSet.add(segmentRadioButton);
 		sobelRadioButton.setSelected(true);
@@ -255,6 +262,7 @@ public class TestUI extends JFrame {
 		classAndFeaturePanel.add(sobelRadioButton);
 		classAndFeaturePanel.add(sobelThresholdRadioButton);
 		classAndFeaturePanel.add(cannyRadioButton);
+		classAndFeaturePanel.add(segmentCannyRadioButton);
 		classAndFeaturePanel.add(meanShiftRadioButton);
 		classAndFeaturePanel.add(segmentRadioButton);
 		
@@ -350,7 +358,7 @@ public class TestUI extends JFrame {
 		double[] all = im.getAllMoments();
 		double[] ret = null;
 		if (hu6RadioButton.isSelected()) {
-			if (false) {
+			if (includeHu7) {
 				ret = new double[6];
 				ret[0] = all[0];
 				ret[1] = all[3];
@@ -367,7 +375,7 @@ public class TestUI extends JFrame {
 				ret[4] = all[7];
 			}
 		} else if (hu7RadioButton.isSelected()) {
-			if (false) {
+			if (includeHu7) {
 				ret = new double[7];
 				ret[0] = all[0];
 				ret[1] = all[1];
@@ -386,7 +394,7 @@ public class TestUI extends JFrame {
 				ret[5] = all[5];
 			}
 		} else {
-			if (false) {
+			if (includeHu7) {
 				ret = all;
 			} else {
 				ret = new double[7];
@@ -456,6 +464,13 @@ public class TestUI extends JFrame {
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
 		} else if (cannyRadioButton.isSelected()) {
+			processedImage = Image.cannyEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.smoothScale(processedImage, new_w, new_h);
+			setImage(processedImage);
+			processedImage = Image.invertImage(currentImage);
+			setImage(processedImage);
+		} else if (segmentCannyRadioButton.isSelected()) {
 			processedImage = Image.segmentImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.cropImage(processedImage);
@@ -512,23 +527,23 @@ public class TestUI extends JFrame {
 			new_h = (int)(ratio * (double)h);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
-			//processedImage = Image.downscaleImage(processedImage, new_w, new_h);
 			processedImage = Image.smoothScale(processedImage, new_w, new_h);
 			setImage(processedImage);
 			//processedImage = Image.desaturateImage(processedImage);
 			//setImage(processedImage);
-			//processedImage = Image.sobelEdgeDetectImage(processedImage);
-			//setImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			setImage(processedImage);
 			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
 			setImage(processedImage);
 			if (Image.blackBackground(processedImage)) {
 				processedImage = Image.invertImage(processedImage);
 				setImage(processedImage);
 			}
+		}
+		if (pauseAfterProcess) {
             try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
