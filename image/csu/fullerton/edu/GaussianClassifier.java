@@ -1,5 +1,7 @@
 package image.csu.fullerton.edu;
 
+
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -47,9 +49,9 @@ public class GaussianClassifier {
 	private class sortByLikelihood implements Comparator<Likelihood> {
 		public int compare(Likelihood l1, Likelihood l2) {
 			double diff = l1.likelihood - l2.likelihood;
-			if (diff > 0.0)
+			if (diff < 0.0)
 				return 1;
-			else if (diff < 0.0)
+			else if (diff > 0.0)
 				return -1;
 			else
 				return 0;
@@ -79,7 +81,6 @@ public class GaussianClassifier {
 		}else{			
 			p_ci = subSize/totalSize;
 		}
-		
 		return p_ci;
 	}
 	
@@ -97,7 +98,6 @@ public class GaussianClassifier {
 		int width = subFeatures.get(0).feature.length;
 		double n = (double)subFeatures.size();
 		double preDensity = 0.0, powerDensity =0.0 , p = 0.0;
-		//double [][] powDensity = new double[1][1];
 		NumberFormat formatter = new DecimalFormat("#0.000000");// formate the matrix numbers
 		
 		Matrix m = new Matrix(width,1);  // mean matrix width*1
@@ -111,8 +111,8 @@ public class GaussianClassifier {
 			m.plusEquals(matrix);
 		}
 		m = m.times(1/n);
-		System.out.println("M"+classType+" Mean vector:");
-		m.print(formatter, 1);
+//		System.out.println("M"+classType+" Mean vector:");
+//		m.print(formatter, 1);
 		
 		//Covariance matrix
 		it = subFeatures.iterator();
@@ -124,8 +124,8 @@ public class GaussianClassifier {
 		}
 		Matrix mmt = m.times(m.transpose());
 		c = c.times(1/n).minusEquals(mmt);
-		System.out.println("C"+classType+" Covariance matrix:");
-		c.print(formatter, 1);
+//		System.out.println("C"+classType+" Covariance matrix:");
+//		c.print(formatter, 1);
 		
 		// Covanriance matrix inverse
 		Matrix x_mt = vv.minus(m).transpose();
@@ -139,16 +139,22 @@ public class GaussianClassifier {
 			c_inverse = c.inverse();
 			powerMatirxDensity = x_mt.times(c_inverse).times(x_m).times((-0.5));
 			powerDensity = powerMatirxDensity.getArray()[0][0];
+/*			System.out.println("PowerDensity  matrix:=====");
+			powerMatirxDensity.print(formatter, 1);
+			System.out.println("PowerDensity:====="+powerDensity);*/
 		}
 		
-		preDensity = 1/(Math.pow(2*Math.PI,width/2)*Math.pow(c.det(),0.5));
+		preDensity = 1/(Math.pow(2*Math.PI,width/2)*Math.pow(Math.abs(c.det()),0.5));
 		if(Double.isNaN(preDensity)){
 			System.out.println("Covariance determinant value is negative. " +
 					"Can not get this density probability for C"+classType);// This classType would not be added to likelihoods list
 			return Math.pow(-1, 0.5);
 		}else{
 			p = preDensity*Math.exp(powerDensity);
+/*			System.out.println("preDensity:====="+preDensity);
+			System.out.println("Math.exp(powerDensity):========"+Math.exp(powerDensity));*/
 		}	
+//		System.out.println("Likelihood is ===============p(c"+classType+")*p(x|c"+classType+")= "+ p);
 		return p;
 	}
 	/**
@@ -171,8 +177,7 @@ public class GaussianClassifier {
 		}
 		
 		for(Integer classSize:al){
-			if(classSize.intValue()!=0){
-//			System.out.println("class"+j+" total size is "+classSize.intValue());			
+			if(classSize.intValue()!=0){			
 			priori = calculatePriori((double)classSize.intValue(),(double)totalDataSize);
 			density = calculateDensity(j,v,features.subList(index,index+classSize.intValue()));
 				if(!Double.isNaN(density)&&!Double.isNaN(priori)){
@@ -189,10 +194,12 @@ public class GaussianClassifier {
 		Collections.sort(features, new sortByClasstype());		
 		preCalculate(v);
 		Collections.sort(likelihoods, new sortByLikelihood());
-		for(Likelihood l:likelihoods){
-			System.out.println("New sorted likelihoods:"+l.likelihood +"The classified class is C"+l.c);
+		for(Likelihood li: likelihoods){
+			System.out.println("new sort"+li.c+li.likelihood);
+			
 		}
-		System.out.println("This object is classified as C"+likelihoods.get(0).c+" by Gaussian");
-		return likelihoods.get(0).c;
+		int classTpye = likelihoods.get(0).c;
+		likelihoods = new ArrayList<Likelihood>();
+		return classTpye;
 	}
 }
