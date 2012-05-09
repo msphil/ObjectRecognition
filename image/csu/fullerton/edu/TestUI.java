@@ -464,9 +464,9 @@ public class TestUI extends JFrame {
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
 		} else if (cannyRadioButton.isSelected()) {
-			processedImage = Image.cannyEdgeDetectImage(processedImage);
-			setImage(processedImage);
 			processedImage = Image.smoothScale(processedImage, new_w, new_h);
+			setImage(processedImage);
+			processedImage = Image.cannyEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
