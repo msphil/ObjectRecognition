@@ -43,6 +43,7 @@ public class TestUI extends JFrame {
 	private JRadioButton sobelRadioButton;
 	private JRadioButton sobelThresholdRadioButton;
 	private JRadioButton cannyRadioButton;
+	private JRadioButton meanShiftRadioButton;
 	private JRadioButton segmentRadioButton;
 	private ButtonGroup groupFeatureSet;
 	
@@ -231,7 +232,9 @@ public class TestUI extends JFrame {
 		sobelThresholdRadioButton.addActionListener(buttonHandler);
 		cannyRadioButton = new JRadioButton("Canny Edge Detection");
 		cannyRadioButton.addActionListener(buttonHandler);
-		segmentRadioButton = new JRadioButton("mean shift segment + canny");
+		meanShiftRadioButton = new JRadioButton("mean shift segment + canny");
+		meanShiftRadioButton.addActionListener(buttonHandler);
+		segmentRadioButton = new JRadioButton("segment + canny");
 		segmentRadioButton.addActionListener(buttonHandler);
 		groupFeatureSet = new ButtonGroup();
 		groupFeatureSet.add(desatRadioButton);
@@ -239,6 +242,7 @@ public class TestUI extends JFrame {
 		groupFeatureSet.add(sobelRadioButton);
 		groupFeatureSet.add(sobelThresholdRadioButton);
 		groupFeatureSet.add(cannyRadioButton);
+		groupFeatureSet.add(meanShiftRadioButton);
 		groupFeatureSet.add(segmentRadioButton);
 		sobelRadioButton.setSelected(true);
 		classAndFeaturePanel.add(desatRadioButton);
@@ -246,6 +250,7 @@ public class TestUI extends JFrame {
 		classAndFeaturePanel.add(sobelRadioButton);
 		classAndFeaturePanel.add(sobelThresholdRadioButton);
 		classAndFeaturePanel.add(cannyRadioButton);
+		classAndFeaturePanel.add(meanShiftRadioButton);
 		classAndFeaturePanel.add(segmentRadioButton);
 		
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("moment size selection:")));
@@ -413,10 +418,11 @@ public class TestUI extends JFrame {
 		new_w = (int)(ratio * (double)w);
 		new_h = (int)(ratio * (double)h);
 		
-		processedImage = Image.downscaleImage(image, new_w, new_h);
-		setImage(processedImage);
+		processedImage = image;
 		if (sobelRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
 			setImage(processedImage);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
@@ -425,6 +431,8 @@ public class TestUI extends JFrame {
 		} else if (sobelThresholdRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
@@ -432,21 +440,33 @@ public class TestUI extends JFrame {
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
 		} else if (cannyRadioButton.isSelected()) {
+			processedImage = Image.segmentImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.cropImage(processedImage);
+			setImage(processedImage);
 			processedImage = Image.cannyEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.smoothScale(processedImage, new_w, new_h);
 			setImage(processedImage);
 			processedImage = Image.invertImage(currentImage);
 			setImage(processedImage);
 		} else if (desatRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
 		} else if (otsuThresholdRadioButton.isSelected()) {
 			processedImage = Image.desaturateImage(processedImage);
 			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
 			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
 			setImage(processedImage);
-			processedImage = Image.invertImage(currentImage);
+			//processedImage = Image.invertImage(currentImage);
+			//setImage(processedImage);
+		} else if (meanShiftRadioButton.isSelected()) {
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
 			setImage(processedImage);
-		} else if (segmentRadioButton.isSelected()) {
 			//processedImage = Image.sobelEdgeDetectImage(processedImage);
 			//setImage(processedImage);
 			for (int i=0; i < 5; i++) {
@@ -457,8 +477,34 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			//processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
 			//setImage(processedImage);
-			processedImage = Image.invertImage(currentImage);
+			processedImage = Image.invertImage(processedImage);
 			setImage(processedImage);
+		} else if (segmentRadioButton.isSelected()) {
+			processedImage = Image.segmentImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.cropImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			//processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			processedImage = Image.smoothScale(processedImage, new_w, new_h);
+			setImage(processedImage);
+			//processedImage = Image.desaturateImage(processedImage);
+			//setImage(processedImage);
+			//processedImage = Image.sobelEdgeDetectImage(processedImage);
+			//setImage(processedImage);
+			processedImage = Image.thresholdImage(processedImage, Image.otsuThreshold(processedImage));
+			setImage(processedImage);
+			if (Image.blackBackground(processedImage)) {
+				processedImage = Image.invertImage(processedImage);
+				setImage(processedImage);
+			}
+            try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		return processedImage;

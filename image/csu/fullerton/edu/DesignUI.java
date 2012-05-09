@@ -33,12 +33,15 @@ public class DesignUI extends JFrame {
 
 	private JButton desaturateButton;
 	private JButton downscaleButton;
+	private JButton downscaleSmoothButton;
 	private JButton edgedetectButton;
 	private JButton sobelButton;
 	private JButton cannyEdgeDetectButton;
 	private JButton thresholdButton;
 	private JButton otsuThresholdButton;
 	private JButton meanShiftButton;
+	private JButton segmentButton;
+	private JButton cropButton;
 	private JButton momentsButton;
 
 	private JPanel imagePanel;
@@ -90,6 +93,9 @@ public class DesignUI extends JFrame {
 		downscaleButton = new JButton("Downscale");
 		downscaleButton.addActionListener(buttonHandler);
 		processPanel.add(downscaleButton);
+		downscaleSmoothButton = new JButton("Smooth Downscale");
+		downscaleSmoothButton.addActionListener(buttonHandler);
+		processPanel.add(downscaleSmoothButton);
 		edgedetectButton = new JButton("Edge Detect");
 		edgedetectButton.addActionListener(buttonHandler);
 		processPanel.add(edgedetectButton);
@@ -108,6 +114,12 @@ public class DesignUI extends JFrame {
 		meanShiftButton = new JButton("Mean Shift");
 		meanShiftButton.addActionListener(buttonHandler);
 		processPanel.add(meanShiftButton);
+		segmentButton = new JButton("Segment");
+		segmentButton.addActionListener(buttonHandler);
+		processPanel.add(segmentButton);
+		cropButton = new JButton("Crop");
+		cropButton.addActionListener(buttonHandler);
+		processPanel.add(cropButton);
 		momentsButton = new JButton("Calculate Moments");
 		momentsButton.addActionListener(buttonHandler);
 		processPanel.add(momentsButton);
@@ -213,6 +225,17 @@ public class DesignUI extends JFrame {
 	// ButtonHandler:
 	private class ButtonHandler implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
+			int new_w = 64, new_h = 64, w, h;
+			double ratio;
+			if (currentImage != null) {
+				int scale = 64;
+				w = currentImage.getWidth();
+				h = currentImage.getHeight();
+				ratio = (w > h) ? (double)scale / (double)w : (double)scale / (double)w;
+				new_w = (int)(ratio * (double)w);
+				new_h = (int)(ratio * (double)h);
+			}
+			
 			if (event.getSource() == quitButton) {
 				System.out.print("quit\n");
 				DesignUI.this.dispose(); // clean up UI
@@ -257,7 +280,9 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == desaturateButton) {
 				setImage(image.csu.fullerton.edu.Image.desaturateImage(currentImage));
 			} else if (event.getSource() == downscaleButton) {
-				setImage(image.csu.fullerton.edu.Image.downscaleImage(currentImage, 64, 64));
+				setImage(image.csu.fullerton.edu.Image.downscaleImage(currentImage, new_w, new_h));
+			} else if (event.getSource() == downscaleSmoothButton) {
+				setImage(image.csu.fullerton.edu.Image.smoothScale(currentImage, new_w, new_h));
 			} else if (event.getSource() == edgedetectButton) {
 				setImage(image.csu.fullerton.edu.Image.edgeDetectImage(currentImage));
 			} else if (event.getSource() == sobelButton) {
@@ -271,6 +296,10 @@ public class DesignUI extends JFrame {
 				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, thresh));
 			} else if (event.getSource() == meanShiftButton) {
 				setImage(image.csu.fullerton.edu.Image.meanShift(currentImage));
+			} else if (event.getSource() == segmentButton) {
+				setImage(image.csu.fullerton.edu.Image.segmentImage(currentImage));
+			} else if (event.getSource() == cropButton) {
+				setImage(image.csu.fullerton.edu.Image.cropImage(currentImage));
 			} else if (event.getSource() == momentsButton) {
 				image.csu.fullerton.edu.Image.calculateMoments(currentImage);
 			} else {
