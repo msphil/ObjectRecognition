@@ -7,6 +7,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 
@@ -53,6 +55,195 @@ public class Image {
 		return scaledImage;
 	}
 
+	/**
+	 * Bilinear resize ARGB image.
+	 * pixels is an array of size w * h.
+	 * Target dimension is w2 * h2.
+	 * w2 * h2 cannot be zero.
+	 * 
+	 * @param pixels Image pixels.
+	 * @param w Image width.
+	 * @param h Image height.
+	 * @param w2 New width.
+	 * @param h2 New height.
+	 * @return New array with size w2 * h2.
+	 */
+	private static int[] resizeBilinear(int[] pixels, int w, int h, int w2, int h2) {
+	    int[] temp = new int[w2*h2] ;
+	    int a, b, c, d, x, y, index ;
+	    float x_ratio = ((float)(w-1))/w2 ;
+	    float y_ratio = ((float)(h-1))/h2 ;
+	    float x_diff, y_diff, blue, red, green ;
+	    int offset = 0 ;
+	    for (int i=0;i<h2;i++) {
+	        for (int j=0;j<w2;j++) {
+	            x = (int)(x_ratio * j) ;
+	            y = (int)(y_ratio * i) ;
+	            x_diff = (x_ratio * j) - x ;
+	            y_diff = (y_ratio * i) - y ;
+	            index = (y*w+x) ;                
+	            a = pixels[index] ;
+	            b = pixels[index+1] ;
+	            c = pixels[index+w] ;
+	            d = pixels[index+w+1] ;
+
+	            // blue element
+	            // Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
+	            blue = (a&0xff)*(1-x_diff)*(1-y_diff) + (b&0xff)*(x_diff)*(1-y_diff) +
+	                   (c&0xff)*(y_diff)*(1-x_diff)   + (d&0xff)*(x_diff*y_diff);
+
+	            // green element
+	            // Yg = Ag(1-w)(1-h) + Bg(w)(1-h) + Cg(h)(1-w) + Dg(wh)
+	            green = ((a>>8)&0xff)*(1-x_diff)*(1-y_diff) + ((b>>8)&0xff)*(x_diff)*(1-y_diff) +
+	                    ((c>>8)&0xff)*(y_diff)*(1-x_diff)   + ((d>>8)&0xff)*(x_diff*y_diff);
+
+	            // red element
+	            // Yr = Ar(1-w)(1-h) + Br(w)(1-h) + Cr(h)(1-w) + Dr(wh)
+	            red = ((a>>16)&0xff)*(1-x_diff)*(1-y_diff) + ((b>>16)&0xff)*(x_diff)*(1-y_diff) +
+	                  ((c>>16)&0xff)*(y_diff)*(1-x_diff)   + ((d>>16)&0xff)*(x_diff*y_diff);
+
+	            temp[offset++] = 
+	                    0xff000000 | // hardcode alpha
+	                    ((((int)red)<<16)&0xff0000) |
+	                    ((((int)green)<<8)&0xff00) |
+	                    ((int)blue) ;
+	        }
+	    }
+	    return temp ;
+	}
+	
+	static BufferedImage smoothScale(BufferedImage currentImage, int newWidth, int newHeight) {
+		System.out.printf("smoothScale\n");
+		
+		BufferedImage scaledImage = null;
+		if (currentImage != null) {
+			int w = currentImage.getWidth();
+			int h = currentImage.getHeight();
+			scaledImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+			int[] pixels = currentImage.getRGB(0,  0, w, h, null, 0, w);
+			pixels = resizeBilinear(pixels, w, h, newWidth, newHeight);
+			scaledImage.setRGB(0, 0, newWidth, newHeight, pixels, 0, newWidth);
+		}
+		return scaledImage;
+	}
+	
+	static boolean blackBackground(BufferedImage currentImage) {
+		System.out.printf("blackBackground\n");
+		boolean isBlack = false;
+		
+		if (currentImage != null) {
+			int width = currentImage.getWidth();
+			int height = currentImage.getHeight();
+			Color[] colors = new Color[4];
+			colors[0] = new Color(currentImage.getRGB(1, 1));
+			colors[1] = new Color(currentImage.getRGB(width-2, 1));
+			colors[2] = new Color(currentImage.getRGB(1, height-2));
+			colors[3] = new Color(currentImage.getRGB(width-2, height-2));
+			Color black = new Color(0);
+			isBlack = true;
+			for (int i=0; i < 4; i++) {
+				if (!black.equals(colors[i])) {
+					isBlack = false;
+				}
+			}
+		}
+		return isBlack;
+	}
+	static BufferedImage cropImage(BufferedImage currentImage) {
+		System.out.printf("cropImage\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			int width = currentImage.getWidth();
+			int height = currentImage.getHeight();
+			Color[] colors = new Color[4];
+			Color matchedColor = null;
+			colors[0] = new Color(currentImage.getRGB(1, 1));
+			colors[1] = new Color(currentImage.getRGB(width-1, 1));
+			colors[2] = new Color(currentImage.getRGB(1, height-1));
+			colors[3] = new Color(currentImage.getRGB(width-1, height-1));
+			int numMatches = 0;
+			for (int i=0; i < 4; i++) {
+				for (int j=i; j < 4; j++) {
+					if (colors[i].equals(colors[j])) {
+						numMatches++;
+						if (numMatches >= 3) {
+							matchedColor = colors[i];
+						}
+					}
+				}
+			}
+			if (numMatches >= 3) {
+				int lx = 0, uy = 0, rx = width, ly = height;
+				// find left margin
+				for (int x = 1; x < width; x++) {
+					boolean clear = true;
+					for (int y = 0; y < height; y++) {
+						Color c = new Color(currentImage.getRGB(x, y));
+						if (!matchedColor.equals(c)) {
+							clear = false;
+						}
+					}
+					if (!clear) {
+						lx = x - 1;
+						if (lx > 10) lx -= 10; // give a slight border for edge detection
+						break;
+					}
+				}
+				// find right margin
+				for (int x = width-1; x > lx; x--) {
+					boolean clear = true;
+					for (int y = 0; y < height; y++) {
+						Color c = new Color(currentImage.getRGB(x, y));
+						if (!matchedColor.equals(c)) {
+							clear = false;
+						}
+					}
+					if (!clear) {
+						rx = x + 1;
+						if (rx < width-10) rx += 10; // give a slight border for edge detection
+						break;
+					}
+				}
+				// find top margin
+				for (int y = 1; y < height; y++) {
+					boolean clear = true;
+					for (int x = 0; x < width; x++) {
+						Color c = new Color(currentImage.getRGB(x, y));
+						if (!matchedColor.equals(c)) {
+							clear = false;
+						}
+					}
+					if (!clear) {
+						uy = y - 1;
+						if (uy > 10) uy -= 10; // give a slight border for edge detection
+						break;
+					}
+				}
+				// find bottom margin
+				for (int y = height - 1; y > uy; y--) {
+					boolean clear = true;
+					for (int x = 0; x < width; x++) {
+						Color c = new Color(currentImage.getRGB(x, y));
+						if (!matchedColor.equals(c)) {
+							clear = false;
+						}
+					}
+					if (!clear) {
+						ly = y + 1;
+						if (ly < height - 10) ly += 10; // give a slight border for edge detection
+						break;
+					}
+				}
+				
+				System.out.printf("w/h: %d,%d; (%d,%d)(%d,%d)\n", width, height, lx, uy, rx, ly);
+				newImage = currentImage.getSubimage(lx, uy, rx-lx, ly-uy);
+			} else {
+				newImage = currentImage;
+			}
+		}
+		return newImage;
+	}
+	
 	static BufferedImage sobelEdgeDetectImage(BufferedImage currentImage) {
 		/* http://users.ecs.soton.ac.uk/msn/book/new_demo/sobel/ */
 		BufferedImage newImage = null;
@@ -177,7 +368,7 @@ public class Image {
 	}
 	
 	static BufferedImage invertImage(BufferedImage currentImage) {
-		System.out.printf("thresholdImage\n");
+		System.out.printf("invertImage\n");
 		BufferedImage newImage = null;
 		if (currentImage != null) {
 			newImage = new BufferedImage(currentImage.getWidth(), currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -281,10 +472,7 @@ public class Image {
 					r = pixel.getRed();
 					a = pixel.getAlpha();
 					avgVal = (b + g + r) / 3;
-					/*
-					 * arbitrary value, could possibly make this settable or
-					 * dynamic
-					 */
+
 					if (avgVal >= threshold) {
 						finalPixel = 0x00FFFFFF | a << 24;
 					} else {
@@ -409,6 +597,202 @@ public class Image {
 			}
 			newImage.setRGB(0, 0, width, height, pixels, 0, width);
 		}
+		return newImage;
+	}
+
+	/* segmentation algorithm from: http://code.google.com/p/cse160a3/source/browse/trunk/cse160a3/src/Segmentation.java */
+	static BufferedImage segmentImage(BufferedImage currentImage) {
+		System.out.printf("segmentImage\n");
+		BufferedImage newImage = null;
+
+		if (currentImage != null) {
+			newImage = new BufferedImage(currentImage.getWidth(),
+					currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			int width = currentImage.getWidth();
+			int height = currentImage.getHeight();
+			int imagePixels[]; // Array of pixel values from input image, one
+								// int for each color/pixel.
+			int labels[];
+			int pixelWidth;
+
+			imagePixels = currentImage.getRaster().getPixels(0, 0, width,
+					height, (int[]) null);
+
+			// Space between two pixels in the imagePixel array.
+			pixelWidth = currentImage.getSampleModel().getNumDataElements();
+
+			// Apply initial labels (each label is it's own index in the label
+			// array + 1)
+			labels = new int[width * height];
+
+			for (int i = 0; i < width * height; i++) {
+				labels[i] = 0;
+			}
+
+			// Label each pixel as a separate label.
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+
+					int idx = (i * width + j);
+					int idx3 = idx * pixelWidth;
+
+					// Comment this line if you want to label background pixels
+					if (imagePixels[idx3] == 0)
+						continue;
+
+					labels[idx] = idx + 1;
+
+				}
+			}
+
+			int threshold = 4;
+
+			int pix[] = imagePixels;
+			int maxN = Math.max(width, height);
+
+	        int phases = (int) Math.ceil(Math.log(maxN) / Math.log(2)) + 1;
+	        System.out.println("Ok, " + (phases+1) + " phases scheduled...");
+
+	        boolean changed = true;
+	        int max;
+	        for (int pp = 0; pp <= phases && changed; pp++) {
+	                changed = false;
+	            // pass one. Find neighbors with better labels.
+	            for (int i = height - 1; i >= 0; i--) {
+	                for (int j = width - 1; j >= 0; j--) {
+	                    int idx = i*width + j;
+	                    int idx3 = idx*pixelWidth;
+
+	                    if (labels[idx] == 0) 
+	                        continue;
+
+	                    int ll = labels[idx]; // save previous label
+
+	                    // pixels are stored as 3 ints in "pix" array. we just use the first of them. 
+	                    // Compare with each neighbor
+	                    if (i != height - 1 && 
+	                            Math.abs(pix[((i+1)*width + j)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i+1)*width + j]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (i != 0 && 
+	                            Math.abs(pix[((i-1)*width + j)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i-1)*width + j]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (i != height - 1 && j != width - 1 && 
+	                            Math.abs(pix[((i+1)*width + j + 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i+1) * width + j + 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (i != 0 && j != width - 1 && 
+	                            Math.abs(pix[((i-1) * width + j + 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i-1) * width + j + 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (i != height - 1 && j != 0 && 
+	                            Math.abs(pix[((i+1) * width + j - 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i+1) * width + j - 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (i != 0 && j != 0 && 
+	                            Math.abs(pix[((i-1) * width + j - 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[(i-1) * width + j - 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (j != 0 && 
+	                            Math.abs(pix[(i*width + j - 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[i*width + j - 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    if (j != width - 1 && 
+	                            Math.abs(pix[(i*width + j + 1)*pixelWidth] - pix[idx3]) < threshold){
+	                        max = Math.max(labels[idx], labels[i*width + j + 1]);
+	                        if (max != labels[idx])
+	                                changed = true;
+	                        labels[idx] = max;
+	                    }
+
+	                    // if label assigned to this pixel during "follow the pointers" step is worse than label
+	                    // of one of its neighbors, then that means that we're converging to local maximum instead
+	                    // of global one. To correct this, we replace our root pixel's label with better newly found one.
+	                    if (ll < labels[idx]) {
+	                        if (labels[ll - 1] < labels[idx])
+	                            labels[ll - 1] = labels[idx];
+	                    }
+	                }
+	            }
+
+	            // pass two. propagates the updated label of the parent to the children.
+	            for (int i = 0; i < height; i++) {
+	                for (int j = 0; j < width; j++) {
+	                    int idx = i*width + j;
+	                    if (labels[idx] != 0) {
+	                        labels[idx] = Math.max(labels[idx], labels[labels[idx] - 1]); 
+	                        // subtract 1 from pixel's label to convert it to array index
+	                    }
+	                }
+	            }
+
+	            System.out.println( "Phase " + (pp) + " done.");
+
+	        }
+	        
+		    Random random = new Random();
+
+	        int array[] = new int[(width * height) * 3];
+	        HashMap<Integer,Integer> red = new HashMap<Integer,Integer>();
+	        HashMap<Integer,Integer> green = new HashMap<Integer,Integer>();
+	        HashMap<Integer,Integer> blue = new HashMap<Integer,Integer>();
+
+
+	        for (int i = 0; i < height; i++) {
+	            for (int j = 0; j < width; j++) {
+	                int label = labels[i*width+j];
+	                if (label == 0) {
+	                    red.put(label, 0);
+	                    green.put(label, 0);
+	                    blue.put(label, 0);
+	                }
+
+	                if (!red.containsKey(label)) {
+	                    red.put(label, (int)(random.nextDouble()*255));
+	                    green.put(label, (int)(random.nextDouble()*255));
+	                    blue.put(label, (int)(random.nextDouble()*255));
+	                }
+
+	                array[(i*width+j)*3+0] = red.get(label);
+	                array[(i*width+j)*3+1] = green.get(label);
+	                array[(i*width+j)*3+2] = blue.get(label);
+	            }
+	        }
+	 
+	        // Store pixels in BufferedImage
+	        newImage.getRaster().setPixels(0, 0, width, height, array);
+
+		}
+		
 		return newImage;
 	}
 
