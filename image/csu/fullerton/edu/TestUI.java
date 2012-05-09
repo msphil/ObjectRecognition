@@ -52,6 +52,10 @@ public class TestUI extends JFrame {
 	private JRadioButton hu8RadioButton;
 	private ButtonGroup groupFeatureVector;
 	
+	private JRadioButton knnRadioButton;
+	private JRadioButton gaussianRadioButton;
+	private ButtonGroup groupClassifier;
+	
 	private JButton calcClassifierButton;
 	private JButton testDataButton;
 	
@@ -73,6 +77,7 @@ public class TestUI extends JFrame {
 	private String savedDirectoryPath;
 	
 	private KNearestNeighbor knn;
+	private GaussianClassifier gaussian;
 	
 	// Constructor: create the interface
 	public TestUI(CaptureCamera camera) {
@@ -272,6 +277,17 @@ public class TestUI extends JFrame {
 		
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("classifier selection:")));
 		
+		knnRadioButton = new JRadioButton("KNN");
+		knnRadioButton.addActionListener(buttonHandler);
+		gaussianRadioButton = new JRadioButton("Gaussian");
+		gaussianRadioButton.addActionListener(buttonHandler);
+		groupClassifier = new ButtonGroup();
+		groupClassifier.add(knnRadioButton);
+		groupClassifier.add(gaussianRadioButton);
+		gaussianRadioButton.setSelected(true);
+		classAndFeaturePanel.add(knnRadioButton);
+		classAndFeaturePanel.add(gaussianRadioButton);
+		
 		rightPanel.add(classAndFeaturePanel);
 		
 		add(rightPanel);
@@ -444,6 +460,11 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			processedImage = Image.cropImage(processedImage);
 			setImage(processedImage);
+			w = processedImage.getWidth();
+			h = processedImage.getHeight();
+			ratio = (w > h) ? (double)scale / (double)w : (double)scale / (double)w;
+			new_w = (int)(ratio * (double)w);
+			new_h = (int)(ratio * (double)h);
 			processedImage = Image.cannyEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			processedImage = Image.smoothScale(processedImage, new_w, new_h);
@@ -484,6 +505,11 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			processedImage = Image.cropImage(processedImage);
 			setImage(processedImage);
+			w = processedImage.getWidth();
+			h = processedImage.getHeight();
+			ratio = (w > h) ? (double)scale / (double)w : (double)scale / (double)w;
+			new_w = (int)(ratio * (double)w);
+			new_h = (int)(ratio * (double)h);
 			processedImage = Image.sobelEdgeDetectImage(processedImage);
 			setImage(processedImage);
 			//processedImage = Image.downscaleImage(processedImage, new_w, new_h);
@@ -543,11 +569,19 @@ public class TestUI extends JFrame {
 		return Integer.parseInt(strScale);
 	}
 	
+	private boolean useKNN() {
+		return knnRadioButton.isSelected();
+	}
+	
 	private void processImageFileAndAdd(String strFileName, int c) {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			knn.addDesign(getFeatureVector(im), c);
+			if (useKNN()) {
+				knn.addDesign(getFeatureVector(im), c);
+			} else {
+				gaussian.addDesign(getFeatureVector(im), c);
+			}
 		}
 	}
 
@@ -556,7 +590,11 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			ret_c = knn.testVector(getFeatureVector(im), getKValue());
+			if (useKNN()) {
+				ret_c = knn.testVector(getFeatureVector(im), getKValue());
+			} else {
+				ret_c = gaussian.testVector(getFeatureVector(im));
+			}
 		}
 		return ret_c;
 	}
@@ -566,7 +604,11 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(image);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
-			ret_c = knn.testVector(getFeatureVector(im), getKValue());
+			if (useKNN()) {
+				ret_c = knn.testVector(getFeatureVector(im), getKValue());
+			} else {
+				ret_c = gaussian.testVector(getFeatureVector(im));
+			}
 		}
 		return ret_c;
 	}
@@ -580,7 +622,7 @@ public class TestUI extends JFrame {
 	}
 	
 	private void testData() {
-		if (knn != null) {
+		if ((useKNN() && knn != null) || (!useKNN() && gaussian != null)) {
 			int c = 1;
 			int numClasses = getNumTestClasses();
 			int[][] confusionMatrix = new int[numClasses][numClasses];
@@ -639,7 +681,11 @@ public class TestUI extends JFrame {
 				System.out.printf("Current image evaluated to %d\n", c);
 			} else if (event.getSource() == calcClassifierButton) {
 				System.out.printf("calculate classifier!\n");
-				knn = new KNearestNeighbor();
+				if (useKNN()) {
+					knn = new KNearestNeighbor();
+				} else {
+					gaussian = new GaussianClassifier();
+				}
 				int c = 1;
 				while (classHasFiles(String.format("c:/ordata/design-%s",designTextField.getText()), String.format("%d",c))) {
 					int i = 1;
