@@ -370,6 +370,14 @@ public class TestUI extends JFrame {
 		double[] ret = null;
 		if (hu6RadioButton.isSelected()) {
 			if (includeHu7) {
+				/*
+				ret = new double[4];
+				ret[0] = all[0];
+				ret[1] = all[1];
+				ret[2] = all[2];
+				ret[3] = all[7];
+				*/
+
 				ret = new double[6];
 				ret[0] = all[0];
 				ret[1] = all[3];
@@ -622,15 +630,27 @@ public class TestUI extends JFrame {
 		return knnRadioButton.isSelected();
 	}
 	
+	private void printMoments(double[] fv, int c, String tag) {
+		System.out.printf("%s: [", tag);
+		for (int i=0; i < fv.length; i++) {
+			if (i!=0)
+				System.out.printf(", ");
+			System.out.printf("%f",fv[i]);
+		}
+		System.out.printf("] C%d\n", c);
+	}
+	
 	private void processImageFileAndAdd(String strFileName, int c) {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
+			double[] fv = getFeatureVector(im);
 			if (useKNN()) {
-				knn.addDesign(getFeatureVector(im), c);
+				knn.addDesign(fv, c);
 			} else {
-				gaussian.addDesign(getFeatureVector(im), c);
+				gaussian.addDesign(fv, c);
 			}
+			printMoments(fv, c, "Design");
 		}
 	}
 
@@ -639,11 +659,13 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(strFileName, c);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
+			double[] fv = getFeatureVector(im);
 			if (useKNN()) {
-				ret_c = knn.testVector(getFeatureVector(im), getKValue());
+				ret_c = knn.testVector(fv, getKValue());
 			} else {
-				ret_c = gaussian.testVector(getFeatureVector(im));
+				ret_c = gaussian.testVector(fv);
 			}
+			printMoments(fv, c, "Test");
 		}
 		return ret_c;
 	}
@@ -653,11 +675,13 @@ public class TestUI extends JFrame {
 		BufferedImage processedImage = processImage(image);
 		if (processedImage != null) {
 			ImageMoments im = new ImageMoments(processedImage);
+			double[] fv = getFeatureVector(im);
 			if (useKNN()) {
-				ret_c = knn.testVector(getFeatureVector(im), getKValue());
+				ret_c = knn.testVector(fv, getKValue());
 			} else {
-				ret_c = gaussian.testVector(getFeatureVector(im));
+				ret_c = gaussian.testVector(fv);
 			}
+			printMoments(fv, ret_c, "Eval");
 		}
 		return ret_c;
 	}
