@@ -31,7 +31,11 @@ public class DesignUI extends JFrame {
 	private JButton switchButton;
 	private JButton quitButton;
 
+	private JButton invertButton;
+	private JButton valueInvertButton;
 	private JButton desaturateButton;
+	private JButton desaturateLightnessButton;
+	private JButton stretchHistogramButton;
 	private JButton downscaleButton;
 	private JButton downscaleSmoothButton;
 	private JButton edgedetectButton;
@@ -88,9 +92,21 @@ public class DesignUI extends JFrame {
 
 		// image processing buttons
 		processPanel = new JPanel(new FlowLayout());
+		invertButton = new JButton("Invert");
+		invertButton.addActionListener(buttonHandler);
+		processPanel.add(invertButton);
+		valueInvertButton = new JButton("Value Invert");
+		valueInvertButton.addActionListener(buttonHandler);
+		processPanel.add(valueInvertButton);
 		desaturateButton = new JButton("Desaturate");
 		desaturateButton.addActionListener(buttonHandler);
 		processPanel.add(desaturateButton);
+		desaturateLightnessButton = new JButton("Desaturate Lightness");
+		desaturateLightnessButton.addActionListener(buttonHandler);
+		processPanel.add(desaturateLightnessButton);
+		stretchHistogramButton = new JButton("Stretch Histogram");
+		stretchHistogramButton.addActionListener(buttonHandler);
+		processPanel.add(stretchHistogramButton);
 		downscaleButton = new JButton("Downscale");
 		downscaleButton.addActionListener(buttonHandler);
 		processPanel.add(downscaleButton);
@@ -281,8 +297,16 @@ public class DesignUI extends JFrame {
 				setImage(camera.captureImage());
 			} else if (event.getSource() == saveButton) {
 				image.csu.fullerton.edu.Image.saveImage(currentImage, "c:/ordata/test.jpg", "JPG");
+			} else if (event.getSource() == invertButton) {
+				setImage(image.csu.fullerton.edu.Image.invertImage(currentImage));
+			} else if (event.getSource() == valueInvertButton) {
+				setImage(image.csu.fullerton.edu.Image.valueInvertImage(currentImage));
 			} else if (event.getSource() == desaturateButton) {
 				setImage(image.csu.fullerton.edu.Image.desaturateImage(currentImage));
+			} else if (event.getSource() == desaturateLightnessButton) {
+				setImage(image.csu.fullerton.edu.Image.desaturateLightnessImage(currentImage));
+			} else if (event.getSource() == stretchHistogramButton) {
+				setImage(image.csu.fullerton.edu.Image.stretchLevels(currentImage, image.csu.fullerton.edu.Image.getHistogramMean(currentImage)));
 			} else if (event.getSource() == downscaleButton) {
 				setImage(image.csu.fullerton.edu.Image.downscaleImage(currentImage, new_w, new_h));
 			} else if (event.getSource() == downscaleSmoothButton) {
@@ -294,7 +318,7 @@ public class DesignUI extends JFrame {
 			} else if (event.getSource() == cannyEdgeDetectButton) {
 				setImage(image.csu.fullerton.edu.Image.cannyEdgeDetectImage(currentImage));
 			} else if (event.getSource() == thresholdButton) {
-				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, 128));
+				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, 120));
 			} else if (event.getSource() == otsuThresholdButton) {
 				int thresh = image.csu.fullerton.edu.Image.otsuThreshold(currentImage);
 				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, thresh));

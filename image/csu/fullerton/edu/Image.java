@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 
 public class Image {
 
-    private static int[][] imageRBGHistogram(BufferedImage input) {
+    private static int[][] imageRGBHistogram(BufferedImage input) {
 
         int[][] histogram = new int[3][256];
 
@@ -31,15 +31,102 @@ public class Image {
             }
         }
 
-        for(int i=0; i<histogram.length; i++) {
-        	for (int j=0; j<histogram[i].length; j++) {
-        		System.out.printf("%04d ", histogram[i][j]);
-        	}
-        	System.out.printf("\n");
+        if (true) {
+	        for(int i=0; i<histogram.length; i++) {
+	        	for (int j=0; j<histogram[i].length; j++) {
+	        		System.out.printf("%04d ", histogram[i][j]);
+	        	}
+	        	System.out.printf("\n");
+	        }
         }
 
         return histogram;
 
+    }
+    
+    static int getHistogramMean(BufferedImage image) {
+    	int[][] hist = imageRGBHistogram(image);
+    	double mean = 0;
+    	double count = 0;
+    	
+    	for (int c=0; c < hist.length; c++) {
+    		for (int x=0; x<hist[c].length; x++) {
+    			mean += hist[c][x]; 
+    		}
+    	}
+    	
+    	count = (hist.length + 1) * hist[0].length;
+
+    	mean = mean/count;
+    	mean = 68.3;
+    	System.out.printf("mean: %.2f\n", mean);
+    	return (int)mean;
+    }
+    
+    private static double clamp(double v, double min, double max) {
+    	if (v > max) {
+    		return max;
+    	} else if (v < min) {
+    		return min;
+    	}
+    	return v;
+    }
+    
+    private static double mapValue(double c, int max) {
+    	double value;
+    	
+    	value = c / 255.0;
+    	
+    	value = clamp(value, 0.0, 1.0);
+    	
+    	value = value * max;
+    	
+    	return value;
+    }
+    
+    private static int mapRGB(int rgb, int newMax) {
+    	// adapted from GEGL's gimpoperationlevels
+    	// Note: gamma set to 1.0 which simplifies the math
+    	int r, g, b, a;
+    	Color c = new Color(rgb);
+    	r = c.getRed();
+    	g = c.getGreen();
+    	b = c.getBlue();
+    	a = c.getAlpha();
+    	double value;
+    	
+    	value = mapValue((double)r, newMax);
+    	value = mapValue(value, newMax);
+    	r = (int)value;
+    	
+    	value = mapValue((double)g, newMax);
+    	value = mapValue(value, newMax);
+    	g = (int)value;
+    	
+    	value = mapValue((double)b, newMax);
+    	value = mapValue(value, newMax);
+    	b = (int)value;
+    	
+    	Color newPixel = new Color(r, g, b, a);
+    	
+    	return newPixel.getRGB();
+    }
+    
+    static BufferedImage stretchLevels(BufferedImage currentImage, int newMax) {
+		System.out.printf("stretchLevels\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			int width = currentImage.getWidth();
+			int height = currentImage.getHeight();
+			newImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			
+			for (int x=0; x < width; x++) {
+				for (int y=0; y < height; y++) {
+					newImage.setRGB(x, y, mapRGB(currentImage.getRGB(x, y), newMax));
+				}
+			}
+		}
+		return newImage;
     }
     
     private static boolean nearBlack(Color c) {
@@ -130,6 +217,19 @@ public class Image {
 							ly = y + 1;
 					}
 				}
+				for (int x=1; x < width - 2; x++) {
+					for (int y=1; y < height - 2; y++) {
+						Color i = new Color(newImage.getRGB(x,y));
+						int j = newImage.getRGB(x-1,y-1);
+						int k = newImage.getRGB(x+1,y-1);
+						int l = newImage.getRGB(x-1,y+1);
+						int m = newImage.getRGB(x+1,y+1);
+						if ((nearBlack(i)) && (j == 0xFFFFFFFF) && (j==k) && (l==m) && (j==l)) {
+							System.out.printf("(%d,%d) is single black pixel", x,y);
+							newImage.setRGB(x, y, replacement);
+						}
+					}
+				}
 				//newImage.setRGB(0,  0, width, height, edgeImage.getRGB(0, 0, width, height, null, 0, width), 0, width);
 			}
 		}
@@ -141,8 +241,13 @@ public class Image {
 		BufferedImage newImage = null;
 		if (currentImage != null) {
 			if (true) {
-				BufferedImage edgeImage = sobelEdgeDetectImage(currentImage);
-				edgeImage = meanShift(edgeImage);
+				BufferedImage edgeImage;
+				
+				//edgeImage = cannyEdgeDetectImage(currentImage);
+				edgeImage = sobelEdgeDetectImage(currentImage);
+				//edgeImage = meanShift(edgeImage);
+				//edgeImage = thresholdImage(edgeImage, otsuThreshold(edgeImage));
+				edgeImage = cannyEdgeDetectImage(edgeImage);
 				newImage = maskByEdge(currentImage, edgeImage);
 			} else {
 				// stupid idea
@@ -152,7 +257,7 @@ public class Image {
 					bgImage = ImageIO.read(f);
 					newImage = new BufferedImage(currentImage.getWidth(),
 							currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
-					int[][] bgHist = imageRBGHistogram(bgImage);
+					int[][] bgHist = imageRGBHistogram(bgImage);
 					for (int x=0; x < currentImage.getWidth(); x++) { 
 						for (int y=0; y < currentImage.getHeight(); y++) {
 							Color c = new Color(currentImage.getRGB(x, y));
@@ -193,6 +298,37 @@ public class Image {
 					int finalGray = gray | gray << 8 | gray << 16;
 					int newPixel = (a << 24) | finalGray;
 					newImage.setRGB(x, y, newPixel);
+				}
+			}
+		}
+		return newImage;
+	}
+
+	static BufferedImage desaturateLightnessImage(BufferedImage currentImage) {
+		System.out.printf("desaturateLightnessImage\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			newImage = new BufferedImage(currentImage.getWidth(),
+					currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			for (int y = 0; y < currentImage.getHeight(); y++) {
+				for (int x = 0; x < currentImage.getWidth(); x++) {
+					float min, max, value;
+					Color pixel = new Color(currentImage.getRGB(x, y));
+					// formula from GEGL's gimpoperationdesaturate.c
+					int b = pixel.getBlue();
+					int g = pixel.getGreen();
+					int r = pixel.getRed();
+					int a = pixel.getAlpha();
+					max = Math.max(r,g);
+					max = Math.max(max,b);
+					min = Math.min(r,g);
+					min = Math.min(min,b);
+					value = (max + min)/2;
+					r = (int)value;
+					g = (int)value;
+					b = (int)value;
+					Color newPixel = new Color(r, g, b, a);
+					newImage.setRGB(x, y, newPixel.getRGB());
 				}
 			}
 		}
@@ -527,6 +663,57 @@ public class Image {
 		return newImage;
 	}
 	
+	static BufferedImage valueInvertImage(BufferedImage currentImage) {
+		System.out.printf("valueInvertImage\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			newImage = new BufferedImage(currentImage.getWidth(), currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			for (int y = 0; y < currentImage.getHeight(); y++) {
+				for (int x = 0; x < currentImage.getWidth(); x++) {
+					int r, g, b, a;
+					int value, value2, min, delta;
+					Color pixel = new Color(currentImage.getRGB(x, y));
+					b = pixel.getBlue();
+					g = pixel.getGreen();
+					r = pixel.getRed();
+					a = pixel.getAlpha();
+					// adapted from gimp's value-invert plugin
+					if (r > g) {
+						value = Math.max(r,b);
+						min = Math.min(g,b);
+					} else {
+						value = Math.max(g,b);
+						min = Math.min(r,b);
+					}
+					delta = value - min;
+					if ((value==0)||(delta==0)) {
+						r = 255 - value;
+						g = 255 - value;
+						b = 255 - value;
+					} else {
+						value2 = value / 2;
+						if (r == value) {
+							r = 255 - r;
+							b = ((r*b) + value2) / value;
+							g = ((r*g) + value2) / value;
+						} else if (g == value) {
+							g = 255 - g;
+							r = ((g*r) + value2) / value;
+							b = ((g*b) + value2) / value;
+						} else {
+							b = 255 - b;
+							g = ((b*g) + value2) / value;
+							r = ((b*r) + value2) / value;
+						}
+					}
+					Color newPixel = new Color(r, g, b, a);
+					newImage.setRGB(x, y, newPixel.getRGB());
+				}
+			}
+		}
+		return newImage;
+	}
+
 	static BufferedImage invertImage(BufferedImage currentImage) {
 		System.out.printf("invertImage\n");
 		BufferedImage newImage = null;
