@@ -31,7 +31,7 @@ public class Image {
             }
         }
 
-        if (true) {
+        if (false) {
 	        for(int i=0; i<histogram.length; i++) {
 	        	for (int j=0; j<histogram[i].length; j++) {
 	        		System.out.printf("%04d ", histogram[i][j]);
@@ -51,14 +51,12 @@ public class Image {
     	
     	for (int c=0; c < hist.length; c++) {
     		for (int x=0; x<hist[c].length; x++) {
-    			mean += hist[c][x]; 
+    			mean += x*hist[c][x];
+    			count += hist[c][x];
     		}
     	}
     	
-    	count = (hist.length + 1) * hist[0].length;
-
     	mean = mean/count;
-    	mean = 68.3;
     	System.out.printf("mean: %.2f\n", mean);
     	return (int)mean;
     }
@@ -74,12 +72,17 @@ public class Image {
     
     private static double mapValue(double c, int max) {
     	double value;
+    	double old_low = 0.0;
+    	double old_high = 255.0;
+    	double new_low = 0.0;
+    	double new_high = (double)max;
+    	double ratio;
     	
-    	value = c / 255.0;
+    	ratio = (old_high - old_low) / (new_high - new_low);
     	
-    	value = clamp(value, 0.0, 1.0);
+    	value = c * ratio;
     	
-    	value = value * max;
+    	value = clamp(value, 0.0, 255.0);
     	
     	return value;
     }
@@ -96,15 +99,12 @@ public class Image {
     	double value;
     	
     	value = mapValue((double)r, newMax);
-    	value = mapValue(value, newMax);
     	r = (int)value;
     	
     	value = mapValue((double)g, newMax);
-    	value = mapValue(value, newMax);
     	g = (int)value;
     	
     	value = mapValue((double)b, newMax);
-    	value = mapValue(value, newMax);
     	b = (int)value;
     	
     	Color newPixel = new Color(r, g, b, a);
