@@ -202,4 +202,22 @@ public class GaussianClassifier {
 		likelihoods = new ArrayList<Likelihood>();
 		return classTpye;
 	}
+	
+	void printFeatures(String tag) {
+		Iterator<Feature> it = features.iterator();
+		int count = 0;
+		System.out.printf("%s feature collection:\n",tag);
+		while (it.hasNext()) {
+			Feature f = it.next();
+			System.out.printf("%s: [", tag);
+			for (int i=0; i < f.feature.length; i++) {
+				if (i!=0)
+					System.out.printf(", ");
+				System.out.printf("%f",f.feature[i]);
+			}
+			System.out.printf("] C%d\n", f.c);
+			count++;
+		}
+		System.out.printf("%s: %d vectors\n", tag, count);
+	}
 }
