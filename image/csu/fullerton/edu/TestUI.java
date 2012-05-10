@@ -51,6 +51,7 @@ public class TestUI extends JFrame {
 	private JRadioButton segmentCannyRadioButton;
 	private JRadioButton meanShiftRadioButton;
 	private JRadioButton segmentRadioButton;
+	private JRadioButton mojoRadioButton;
 	private ButtonGroup groupFeatureSet;
 	
 	private JRadioButton hu6RadioButton;
@@ -253,6 +254,8 @@ public class TestUI extends JFrame {
 		meanShiftRadioButton.addActionListener(buttonHandler);
 		segmentRadioButton = new JRadioButton("segment + canny");
 		segmentRadioButton.addActionListener(buttonHandler);
+		mojoRadioButton = new JRadioButton("mojo");
+		mojoRadioButton.addActionListener(buttonHandler);
 		groupFeatureSet = new ButtonGroup();
 		groupFeatureSet.add(cropRadioButton);
 		groupFeatureSet.add(bgRadioButton);
@@ -264,6 +267,7 @@ public class TestUI extends JFrame {
 		groupFeatureSet.add(segmentCannyRadioButton);
 		groupFeatureSet.add(meanShiftRadioButton);
 		groupFeatureSet.add(segmentRadioButton);
+		groupFeatureSet.add(mojoRadioButton);
 		//sobelRadioButton.setSelected(true);
 		bgRadioButton.setSelected(true);
 		classAndFeaturePanel.add(bgRadioButton);
@@ -276,6 +280,7 @@ public class TestUI extends JFrame {
 		classAndFeaturePanel.add(segmentCannyRadioButton);
 		classAndFeaturePanel.add(meanShiftRadioButton);
 		classAndFeaturePanel.add(segmentRadioButton);
+		classAndFeaturePanel.add(mojoRadioButton);
 		
 		classAndFeaturePanel.add(new JPanel().add(new JLabel("moment size selection:")));
 		
@@ -581,6 +586,23 @@ public class TestUI extends JFrame {
 				processedImage = Image.invertImage(processedImage);
 				setImage(processedImage);
 			}
+		} else if (mojoRadioButton.isSelected()) {
+			processedImage = Image.invertImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.valueInvertImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.desaturateLightnessImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.stretchLevels(currentImage, Image.getHistogramMean(currentImage));
+			setImage(processedImage);
+			processedImage = Image.thresholdImage(currentImage, Image.otsuThreshold(currentImage));
+			setImage(processedImage);
+			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+			setImage(processedImage);
+			processedImage = Image.sobelEdgeDetectImage(processedImage);
+			setImage(processedImage);
+			processedImage = Image.invertImage(processedImage);
+			setImage(processedImage);
 		}
 		if (pauseAfterProcess) {
             try {
@@ -775,6 +797,11 @@ public class TestUI extends JFrame {
 						i++;
 					}
 					c++;
+				}
+				if (useKNN()) {
+					
+				} else {
+					gaussian.printFeatures("Design");
 				}
 			} else if (event.getSource() == testDataButton) {
 				System.out.printf("test data!\n");
