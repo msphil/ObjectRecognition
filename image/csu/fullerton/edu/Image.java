@@ -48,6 +48,7 @@ public class Image {
     	int[][] hist = imageRGBHistogram(image);
     	double mean = 0;
     	double count = 0;
+    	double sigma = 0;
     	
     	for (int c=0; c < hist.length; c++) {
     		for (int x=0; x<hist[c].length; x++) {
@@ -57,7 +58,16 @@ public class Image {
     	}
     	
     	mean = mean/count;
-    	System.out.printf("mean: %.2f\n", mean);
+    	//System.out.printf("mean: %.2f\n", mean);
+    	
+    	for (int c=0; c < hist.length; c++) {
+    		for (int x=0; x<hist[c].length; x++) {
+    			sigma += Math.pow(x*hist[c][x] - mean, 2);
+    		}
+    	}
+    	sigma = Math.sqrt(sigma);
+    	mean += (sigma/count)/2;
+    	//System.out.printf("adjusted mean: %.2f\n", mean);
     	return (int)mean;
     }
     
