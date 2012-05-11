@@ -33,7 +33,7 @@ public class ImageMoments {
 			for (int y = 0; y < h; y++) {
 				Color c = new Color(sourceImage.getRGB(x, y));
 				int avgColor = (c.getRed() + c.getGreen() + c.getBlue()) / 3;
-				imageMatrix[y][x] = (double) (avgColor) / 255;
+				imageMatrix[y][x] = 1.0 - (double) (avgColor) / 255;
 			}
 		}
 	}
@@ -90,7 +90,7 @@ public class ImageMoments {
 		moments[1] = Math.pow((n20 - 02), 2) + Math.pow(2 * n11, 2); // Hu2
 		moments[2] = Math.pow(n30 - (3 * (n12)), 2)
 				+ Math.pow((3 * n21 - n03), 2); // Hu3
-		moments[3] = Math.pow((n30 + n12), 2) + Math.pow((n12 + n03), 2); // Hu4
+		moments[3] = Math.pow((n30 + n12), 2) + Math.pow((n21 + n03), 2); // Hu4
 		moments[4] = (n30 - 3 * n12) * (n30 + n12)
 				* (Math.pow((n30 + n12), 2) - 3 * Math.pow((n21 + n03), 2))
 				+ (3 * n21 - n03) * (n21 + n03)
