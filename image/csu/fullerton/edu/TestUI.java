@@ -599,10 +599,10 @@ public class TestUI extends JFrame {
 			setImage(processedImage);
 			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
 			setImage(processedImage);
-			processedImage = Image.sobelEdgeDetectImage(processedImage);
-			setImage(processedImage);
-			processedImage = Image.invertImage(processedImage);
-			setImage(processedImage);
+			//processedImage = Image.sobelEdgeDetectImage(processedImage);
+			//setImage(processedImage);
+			//processedImage = Image.invertImage(processedImage);
+			//setImage(processedImage);
 		}
 		if (pauseAfterProcess) {
             try {
