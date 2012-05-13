@@ -750,6 +750,62 @@ public class Image {
 	}
 
 
+    static BufferedImage applyColorOtsuThreshold(BufferedImage currentImage) {
+		System.out.printf("colorOtsu\n");
+		BufferedImage newImage = null;
+		if (currentImage != null) {
+			int total = currentImage.getHeight() * currentImage.getWidth();
+			newImage = new BufferedImage(currentImage.getWidth(), currentImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+			int[][] colorHistogram = imageRGBHistogram(currentImage);
+			int[] thresholds = new int[colorHistogram.length];
+			for (int c=0; c < colorHistogram.length; c++) {
+				int[] histogram = colorHistogram[c];
+				float sum = 0;
+				for (int i = 0; i < 256; i++)
+					sum += i * histogram[i];
+
+				float sumB = 0;
+				int wB = 0;
+				int wF = 0;
+
+				float varMax = 0;
+
+				for (int i = 0; i < 256; i++) {
+					wB += histogram[i];
+					if (wB == 0)
+						continue;
+					wF = total - wB;
+
+					if (wF == 0)
+						break;
+
+					sumB += (float) (i * histogram[i]);
+					float mB = sumB / wB;
+					float mF = (sum - sumB) / wF;
+
+					float varBetween = (float) wB * (float) wF * (mB - mF)
+							* (mB - mF);
+
+					if (varBetween > varMax) {
+						varMax = varBetween;
+						thresholds[c] = i;
+					}
+				}
+			}
+			for (int x=0; x < currentImage.getWidth(); x++) {
+				for (int y=0; y < currentImage.getHeight(); y++) {
+					Color c = new Color(currentImage.getRGB(x, y));
+					int r, g, b;
+					if (c.getRed() < thresholds[0]) r = 0; else r = 255;
+					if (c.getGreen() < thresholds[1]) g = 0; else g = 255;
+					if (c.getBlue() < thresholds[2]) b = 0; else b = 255;
+					newImage.setRGB(x, y, new Color(r, g, b, c.getAlpha()).getRGB());
+				}
+			}
+		}
+		return newImage;
+    }
+    
     // Return histogram of grayscale image
 	// source: http://zerocool.is-a-geek.net/?p=376
     private static int[] imageHistogram(BufferedImage input) {
@@ -773,44 +829,48 @@ public class Image {
 	// source: http://zerocool.is-a-geek.net/?p=376
     static int otsuThreshold(BufferedImage currentImage) {
 		System.out.printf("otsuThreshold\n");
-        int threshold = 0;
-    	
+		int threshold = 0;
+
 		if (currentImage != null) {
-        int[] histogram = imageHistogram(currentImage);
-        int total = currentImage.getHeight() * currentImage.getWidth();
+			int[] histogram = imageHistogram(currentImage);
+			int total = currentImage.getHeight() * currentImage.getWidth();
 
-        float sum = 0;
-        for(int i=0; i<256; i++) sum += i * histogram[i];
+			float sum = 0;
+			for (int i = 0; i < 256; i++)
+				sum += i * histogram[i];
 
-        float sumB = 0;
-        int wB = 0;
-        int wF = 0;
+			float sumB = 0;
+			int wB = 0;
+			int wF = 0;
 
-        float varMax = 0;
+			float varMax = 0;
 
-        for(int i=0 ; i<256 ; i++) {
-            wB += histogram[i];
-            if(wB == 0) continue;
-            wF = total - wB;
+			for (int i = 0; i < 256; i++) {
+				wB += histogram[i];
+				if (wB == 0)
+					continue;
+				wF = total - wB;
 
-            if(wF == 0) break;
+				if (wF == 0)
+					break;
 
-            sumB += (float) (i * histogram[i]);
-            float mB = sumB / wB;
-            float mF = (sum - sumB) / wF;
+				sumB += (float) (i * histogram[i]);
+				float mB = sumB / wB;
+				float mF = (sum - sumB) / wF;
 
-            float varBetween = (float) wB * (float) wF * (mB - mF) * (mB - mF);
+				float varBetween = (float) wB * (float) wF * (mB - mF)
+						* (mB - mF);
 
-            if(varBetween > varMax) {
-                varMax = varBetween;
-                threshold = i;
-            }
-        }
+				if (varBetween > varMax) {
+					varMax = varBetween;
+					threshold = i;
+				}
+			}
 
 		}
-        return threshold;
+		return threshold;
 
-    }
+	}
     
     static BufferedImage thresholdImage(BufferedImage currentImage, int threshold) {
 		System.out.printf("thresholdImage\n");

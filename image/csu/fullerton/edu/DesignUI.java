@@ -43,6 +43,7 @@ public class DesignUI extends JFrame {
 	private JButton cannyEdgeDetectButton;
 	private JButton thresholdButton;
 	private JButton otsuThresholdButton;
+	private JButton colorOtsuThresholdButton;
 	private JButton meanShiftButton;
 	private JButton segmentButton;
 	private JButton cropButton;
@@ -128,6 +129,9 @@ public class DesignUI extends JFrame {
 		otsuThresholdButton = new JButton("Otsu Threshold");
 		otsuThresholdButton.addActionListener(buttonHandler);
 		processPanel.add(otsuThresholdButton);
+		colorOtsuThresholdButton = new JButton("Color Otsu Threshold");
+		colorOtsuThresholdButton.addActionListener(buttonHandler);
+		processPanel.add(colorOtsuThresholdButton);
 		meanShiftButton = new JButton("Mean Shift");
 		meanShiftButton.addActionListener(buttonHandler);
 		processPanel.add(meanShiftButton);
@@ -319,6 +323,8 @@ public class DesignUI extends JFrame {
 				setImage(image.csu.fullerton.edu.Image.cannyEdgeDetectImage(currentImage));
 			} else if (event.getSource() == thresholdButton) {
 				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, 120));
+			} else if (event.getSource() == colorOtsuThresholdButton) {
+				setImage(image.csu.fullerton.edu.Image.applyColorOtsuThreshold(currentImage));
 			} else if (event.getSource() == otsuThresholdButton) {
 				int thresh = image.csu.fullerton.edu.Image.otsuThreshold(currentImage);
 				setImage(image.csu.fullerton.edu.Image.thresholdImage(currentImage, thresh));

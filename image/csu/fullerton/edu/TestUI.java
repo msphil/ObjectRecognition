@@ -14,6 +14,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -159,7 +160,7 @@ public class TestUI extends JFrame {
 		JPanel scalePanel = new JPanel(new FlowLayout());
 		scalePanel.add(new JLabel("Scale: "));
 		scaleTextField = new JTextField(5);
-		scaleTextField.setText("32");
+		scaleTextField.setText("128");
 		scalePanel.add(scaleTextField);
 		
 		dataPanel.add(scalePanel);
@@ -269,7 +270,7 @@ public class TestUI extends JFrame {
 		groupFeatureSet.add(segmentRadioButton);
 		groupFeatureSet.add(mojoRadioButton);
 		//sobelRadioButton.setSelected(true);
-		bgRadioButton.setSelected(true);
+		mojoRadioButton.setSelected(true);
 		classAndFeaturePanel.add(bgRadioButton);
 		classAndFeaturePanel.add(cropRadioButton);
 		classAndFeaturePanel.add(desatRadioButton);
@@ -587,22 +588,44 @@ public class TestUI extends JFrame {
 				setImage(processedImage);
 			}
 		} else if (mojoRadioButton.isSelected()) {
-			processedImage = Image.invertImage(processedImage);
-			setImage(processedImage);
-			processedImage = Image.valueInvertImage(processedImage);
-			setImage(processedImage);
-			processedImage = Image.desaturateLightnessImage(processedImage);
-			setImage(processedImage);
-			processedImage = Image.stretchLevels(currentImage, Image.getHistogramMean(currentImage));
-			setImage(processedImage);
-			processedImage = Image.thresholdImage(currentImage, Image.otsuThreshold(currentImage));
-			setImage(processedImage);
-			processedImage = Image.downscaleImage(processedImage, new_w, new_h);
-			setImage(processedImage);
-			//processedImage = Image.sobelEdgeDetectImage(processedImage);
-			//setImage(processedImage);
-			//processedImage = Image.invertImage(processedImage);
-			//setImage(processedImage);
+			if (false) {
+				// experiment with per-color thresholds
+				// sadly, although it appeared to work well in Gimp and on individual pictures, 
+				// nearly eliminating shadows in some cases, it dropped the CCR to 35%.
+				processedImage = Image.invertImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.valueInvertImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.applyColorOtsuThreshold(processedImage);
+				setImage(processedImage);
+				processedImage = Image.desaturateLightnessImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.stretchLevels(currentImage, Image.getHistogramMean(currentImage));
+				setImage(processedImage);
+				int otsu = Image.otsuThreshold(currentImage);
+				if (otsu == 0) otsu = 127;
+				processedImage = Image.thresholdImage(currentImage, otsu);
+				setImage(processedImage);
+				processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+				setImage(processedImage);
+			} else {
+				processedImage = Image.invertImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.valueInvertImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.desaturateLightnessImage(processedImage);
+				setImage(processedImage);
+				processedImage = Image.stretchLevels(currentImage, Image.getHistogramMean(currentImage));
+				setImage(processedImage);
+				processedImage = Image.thresholdImage(currentImage, Image.otsuThreshold(currentImage));
+				setImage(processedImage);
+				processedImage = Image.downscaleImage(processedImage, new_w, new_h);
+				setImage(processedImage);
+				//processedImage = Image.sobelEdgeDetectImage(processedImage);
+				//setImage(processedImage);
+				//processedImage = Image.invertImage(processedImage);
+				//setImage(processedImage);
+			}
 		}
 		if (pauseAfterProcess) {
             try {
@@ -747,6 +770,22 @@ public class TestUI extends JFrame {
 			displayConfusionMatrix(confusionMatrix);
 		}
 	}
+	
+	private void displayClassSample(String strFormat, int c) {
+	    String strFileName = String.format("c:/ordata/test-%s/c%d-1.jpg",testTextField.getText(), c);
+	    File f = new File(strFileName);
+	    BufferedImage image = null;
+		try {
+			image = ImageIO.read(f);
+			image = Image.downscaleImage(image, image.getWidth()/2, image.getHeight()/2);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		ImageDialog imageDialog = new ImageDialog(image, c);
+		imageDialog.setVisible(true);
+
+	}
 
 	// ButtonHandler: 
 	private class ButtonHandler implements ActionListener {
@@ -774,6 +813,7 @@ public class TestUI extends JFrame {
 				System.out.printf("evaluate current image!\n");
 				int c = processImageForResult(currentImage);
 				System.out.printf("Current image evaluated to %d\n", c);
+				displayClassSample("Image evaluated as: %s", c);
 			} else if (event.getSource() == calcClassifierButton) {
 				System.out.printf("calculate classifier!\n");
 				if (useKNN()) {
